@@ -4,20 +4,59 @@ import { BOT_TOKEN } from "./config.js";
 const bot = new Telegraf(BOT_TOKEN);
 
 /* =========================
-   METHOD CHANNEL (ONLY THIS REQUIRED)
+   CONFIG
    ========================= */
 
+const ADMIN_ID = 8136997138;
 const METHOD_CHANNEL = "@Global_Method_Channel";
+const GROUP_ID = "-1003527248014";
 
 /* =========================
-   CHECK JOIN (ONLY METHOD)
+   RANDOM MESSAGES (30)
+   ========================= */
+
+const randomMessages = [
+  "🚀 Stay active with Smart Method!",
+  "💡 Learn something new today!",
+  "🔥 Smart Support Bot is running smoothly!",
+  "📢 Stay connected with updates!",
+  "⚡ Auto system working perfectly!",
+  "🤖 Smart Method Bot is live 24/7!",
+  "🌸 Stay positive and keep learning!",
+  "📊 Growth comes with consistency!",
+  "💬 Don’t forget to check updates!",
+  "🔔 New features coming soon!",
+  "💎 Success is built step by step!",
+  "🚀 Keep pushing forward!",
+  "📈 Your progress matters!",
+  "🧠 Improve your skills daily!",
+  "🔥 Stay focused and win!",
+  "🌐 Connected with Smart System!",
+  "📢 Important updates coming!",
+  "⚙️ System running smooth!",
+  "💡 Think smart, work smart!",
+  "🚀 Never give up!",
+  "📊 Keep tracking your progress!",
+  "💬 Support is always here!",
+  "🔐 Secure system active!",
+  "🌸 Stay motivated always!",
+  "⚡ Fast response system active!",
+  "📢 Smart Method family online!",
+  "🚀 Daily learning mode ON!",
+  "💎 Build your future now!",
+  "🧠 Upgrade your mindset!",
+  "🔥 You are doing great!"
+];
+
+/* =========================
+   CHECK JOIN
    ========================= */
 
 async function isJoined(ctx) {
   try {
     const res = await ctx.telegram.getChatMember(
       METHOD_CHANNEL,
-      ctx.chat.id
+      ctx.from.id
     );
 
     return !(res.status === "left" || res.status === "kicked");
@@ -27,7 +66,7 @@ async function isJoined(ctx) {
 }
 
 /* =========================
-   JOIN BUTTON MESSAGE
+   JOIN BUTTON UI
    ========================= */
 
 function joinUI() {
@@ -36,8 +75,12 @@ function joinUI() {
       inline_keyboard: [
         [
           {
-            text: "⚙️ Join Method Channel",
+            text: "⚙️ Method Channel",
             url: "https://t.me/Global_Method_Channel"
+          },
+          {
+            text: "📢 Main Channel",
+            url: "https://t.me/+75BQ2Qw9UZI4OTM1M"
           }
         ],
         [
@@ -52,7 +95,7 @@ function joinUI() {
 }
 
 /* =========================
-   START
+   START COMMAND
    ========================= */
 
 bot.start(async (ctx) => {
@@ -60,41 +103,17 @@ bot.start(async (ctx) => {
 
   if (!ok) {
     return ctx.reply(
-      "⚠️ You must join Method Channel first to use this bot 🚀",
+      "⚠️ Please join required channels first 🚀",
       joinUI()
     );
   }
 
   const name = ctx.from.first_name || "User";
 
-  /* 🇧🇩 BANGLA MESSAGE */
-  const bn = `
-🌸 স্বাগতম ${name} 🤖
+  ctx.reply(`🌸 Welcome ${name} 🤖
 
-✅ আপনি এখন Smart Support Bot ব্যবহার করতে পারবেন।
-
-📝 আপনার কোনো সমস্যা বা প্রশ্ন থাকলে এখানে লিখে পাঠান।
-আমাদের এডমিন খুব দ্রুত রিপ্লাই দিবে ইনশাআল্লাহ।
-
-━━━━━━━━━━━━━━━
-❤️ ধন্যবাদ Smart Method Family ব্যবহার করার জন্য
-`;
-
-  /* 🇬🇧 ENGLISH MESSAGE */
-  const en = `
-🌸 Welcome ${name} 🤖
-
-✅ You can now use Smart Support Bot.
-
-📝 If you have any problem or question, just send message here.
-Our admin will reply as soon as possible InshaAllah.
-
-━━━━━━━━━━━━━━━
-❤️ Thank you for using Smart Method Family
-`;
-
-  ctx.reply(bn);
-  ctx.reply(en);
+✅ You can now use the bot.
+📝 Send your message, admin will reply soon.`);
 });
 
 /* =========================
@@ -112,46 +131,61 @@ bot.action("check_join", async (ctx) => {
 });
 
 /* =========================
-   USER MESSAGE SYSTEM
+   USER MESSAGE HANDLER
    ========================= */
 
 bot.on("text", async (ctx) => {
+  const text = ctx.message.text;
+
+  // ❌ ignore commands
+  if (text.startsWith("/")) return;
+
   const ok = await isJoined(ctx);
 
   if (!ok) {
-    return ctx.reply(
-      "⚠️ Please join Method Channel first 🚀",
-      joinUI()
-    );
+    return ctx.reply("⚠️ Join Method Channel first 🚀", joinUI());
   }
 
-  const userMsg = ctx.message.text;
-  const name =
+  const user =
     ctx.from.username
       ? `@${ctx.from.username}`
       : ctx.from.first_name;
 
-  /* USER CONFIRMATION */
-  ctx.reply(
-    "📨 Your message has been sent to admin ✅\n⏳ Please wait for reply..."
-  );
+  ctx.reply("📨 Sent to admin, please wait...");
 
-  /* SEND TO ADMIN */
   const adminMsg = `
 📩 NEW USER MESSAGE
 
-👤 User: ${name}
-🆔 ID: ${ctx.chat.id}
+👤 User: ${user}
+🆔 ID: ${ctx.from.id}
 
 💬 Message:
-${userMsg}
+${text}
 
 ━━━━━━━━━━━━━━━
-⏳ Reply ASAP
 `;
 
-  ctx.telegram.sendMessage(ctx.chat.id, adminMsg);
+  ctx.telegram.sendMessage(ADMIN_ID, adminMsg);
 });
+
+/* =========================
+   RANDOM MESSAGE SYSTEM
+   ========================= */
+
+async function sendRandom() {
+  try {
+    const msg =
+      randomMessages[Math.floor(Math.random() * randomMessages.length)];
+
+    await bot.telegram.sendMessage(GROUP_ID, msg);
+
+    console.log("Auto sent:", msg);
+  } catch (err) {
+    console.log("Random error:", err.message);
+  }
+}
+
+setInterval(sendRandom, 120000);
 
 /* ========================= */
 
