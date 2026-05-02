@@ -83,7 +83,7 @@ bot.start(async (ctx) => {
     return ctx.reply("⚠️ Please join required channels first 🚀", joinUI());
   }
 
-  ctx.reply("🌸 Bot started. Use /panel /start 🚀");
+  ctx.reply("🌸 Bot started. Use /panel 🚀");
 });
 
 /* =========================
@@ -99,35 +99,52 @@ bot.action("check_join", async (ctx) => {
 });
 
 /* =========================
-   PANEL
+   PANEL COMMAND (BUTTON SYSTEM)
 ========================= */
 
 bot.command("panel", (ctx) => {
   ctx.reply(`🍊 Orange Carrier Panel 🍊
 ━━━━━━━━━━━━━━━
-
-✉️ Email ➗
-✅ Mariyaakter1028@gmail.com
-
-🔐 Password ➗
-↪️ Onetimeuse ✅
-
-🌐 Panel ➗
-👉 https://www.orangecarrier.com
-
-🆘 Support ➗
-👉 @Smart_Method_Owner
-
-━━━━━━━━━━━━━━━`);
+🔽 Click buttons below 🔽
+`, {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "📧 Copy Gmail", callback_data: "copy_email" }
+        ],
+        [
+          { text: "🔐 Copy Password", callback_data: "copy_pass" }
+        ],
+        [
+          { text: "🌐 Panel Login", url: "https://www.orangecarrier.com" }
+        ],
+        [
+          { text: "👤 Support", url: "https://t.me/Smart_Method_Owner" }
+        ]
+      ]
+    }
+  });
 });
 
 /* =========================
-   BOARDCHAT (ADMIN)
+   COPY BUTTON ACTIONS
+========================= */
+
+bot.action("copy_email", (ctx) => {
+  ctx.answerCbQuery("📧 Copied: Mariyaakter1028@gmail.com");
+});
+
+bot.action("copy_pass", (ctx) => {
+  ctx.answerCbQuery("🔐 Copied: Onetimeuse");
+});
+
+/* =========================
+   BOARDCHAT (ADMIN ONLY)
 ========================= */
 
 bot.command("boardchat", async (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("❌ Admin only command");
+    return ctx.reply("❌ Admin only");
 
   const msg = ctx.message.text.split(" ").slice(1).join(" ");
   if (!msg) return ctx.reply("❌ /boardchat message");
@@ -231,13 +248,22 @@ bot.on("text", async (ctx) => {
 ========================= */
 
 const randomMessages = [
-  "🚀 System Active",
-  "💡 Learn daily",
-  "🔥 Stay focused",
-  "⚡ Bot running",
-  "🌸 Keep growing"
+  "🌟 Stay strong, success is near 💪",
+  "🚀 Keep grinding, don’t stop 🔥",
+  "💡 Smart work always wins 🧠",
+  "🌸 Stay positive, stay focused 😊",
+  "⚡ System is fully active now 🚀",
+  "🔥 Hustle hard, shine bright 💎",
+  "📈 Your growth matters every day 📊",
+  "💬 Keep learning, keep earning 💰",
+  "🌍 Connected with global system 🌐",
+  "🧠 Upgrade your mindset daily 📚",
+  "💎 Small steps lead to big success 🏆",
+  "🚀 Never quit, just upgrade 🔥",
+  "🌸 Good vibes only ✨",
+  "⚙️ Smart system running smoothly 🤖",
+  "📢 Stay tuned for updates 🔔"
 ];
-
 setInterval(async () => {
   const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
   await bot.telegram.sendMessage(GROUP_ID, msg);
