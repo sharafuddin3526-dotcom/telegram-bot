@@ -15,7 +15,7 @@ const GROUP_ID = "-1003527248014";
 const DB_FILE = "./db.json";
 
 /* =========================
-   DATABASE (BAN SYSTEM)
+   DATABASE
    ========================= */
 
 function loadDB() {
@@ -29,9 +29,9 @@ function saveDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-function isBanned(userId) {
+function isBanned(value) {
   const db = loadDB();
-  return db.banned.includes(String(userId));
+  return db.banned.includes(String(value));
 }
 
 /* =========================
@@ -95,7 +95,7 @@ bot.start(async (ctx) => {
 });
 
 /* =========================
-   CHECK JOIN BUTTON
+   CHECK JOIN
    ========================= */
 
 bot.action("check_join", async (ctx) => {
@@ -109,7 +109,7 @@ bot.action("check_join", async (ctx) => {
 });
 
 /* =========================
-   REPLY SYSTEM FIXED
+   REPLY SYSTEM
    ========================= */
 
 const pendingReply = {};
@@ -122,10 +122,11 @@ bot.on("text", async (ctx) => {
   const text = ctx.message.text;
   const userId = ctx.from.id;
 
+  /* ignore commands except reply flow */
   if (text.startsWith("/")) return;
 
   /* BAN CHECK */
-  if (isBanned(userId)) {
+  if (isBanned(userId) || isBanned(ctx.from.username)) {
     return ctx.reply("⛔ You are banned from using this bot.");
   }
 
@@ -135,9 +136,7 @@ bot.on("text", async (ctx) => {
     return ctx.reply("⚠️ Join Method Channel first 🚀", joinUI());
   }
 
-  /* ========================
-     ADMIN REPLY MODE FIX
-     ======================== */
+  /* ================= ADMIN REPLY FLOW ================= */
 
   if (userId === ADMIN_ID && pendingReply[ADMIN_ID]) {
     const targetUser = pendingReply[ADMIN_ID];
@@ -182,7 +181,7 @@ ${text}
 });
 
 /* =========================
-   REPLY BUTTON HANDLER
+   REPLY BUTTON
    ========================= */
 
 bot.action(/reply_(\d+)/, async (ctx) => {
@@ -198,42 +197,81 @@ bot.action(/reply_(\d+)/, async (ctx) => {
 });
 
 /* =========================
-   ADMIN COMMANDS
+   PANEL (ALL USERS)
    ========================= */
 
 bot.command("panel", (ctx) => {
-  ctx.reply("🚧 Coming soon this feature 🚀");
+  ctx.reply("🖼 This feature coming soon 🚀");
 });
+
+/* =========================
+   BLOCK SYSTEM
+   ========================= */
 
 bot.command("block", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+  if (ctx.from.id !== ADMIN_ID) {
+    return ctx.reply("❌ This command is only for Admin 👮‍♂️");
+  }
 
-  const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ /block userID");
+  const input = ctx.message.text.split(" ")[1];
+
+  if (!input) return ctx.reply("❌ Use: /block userID or @username");
 
   const db = loadDB();
-  if (!db.banned.includes(id)) db.banned.push(id);
+  if (!db.banned.includes(input)) {
+    db.banned.push(input);
+  }
   saveDB(db);
 
-  ctx.reply(`⛔ User ${id} banned`);
+  ctx.reply(`⛔ User ${input} blocked`);
 });
+
+/* =========================
+   UNBLOCK SYSTEM
+   ========================= */
 
 bot.command("unblock", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+  if (ctx.from.id !== ADMIN_ID) {
+    return ctx.reply("❌ This command is only for Admin 👮‍♂️");
+  }
 
-  const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ /unblock userID");
+  const input = ctx.message.text.split(" ")[1];
+
+  if (!input) return ctx.reply("❌ Use: /unblock userID or @username");
 
   const db = loadDB();
-  db.banned = db.banned.filter(u => u !== id);
+  db.banned = db.banned.filter(u => u !== input);
   saveDB(db);
 
-  ctx.reply(`✅ User ${id} unbanned`);
+  ctx.reply(`✅ User ${input} unblocked`);
 });
 
+/* =========================
+   BOARDCHAT (ADMIN ONLY INFO)
+   ========================= */
+
 bot.command("boardchat", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
-  ctx.reply("⚠️ This command is admin only 👮‍♂️");
+  if (ctx.from.id !== ADMIN_ID) {
+    return ctx.reply("❌ This command is only for Admin 👮‍♂️");
+  }
+
+  ctx.reply("⚠️ Admin command active 👮‍♂️");
+});
+
+/* =========================
+   WRONG COMMAND WARNING
+   ========================= */
+
+bot.on("text", (ctx) => {
+  if (ctx.message.text.startsWith("/")) {
+    const cmd = ctx.message.text.split(" ")[0];
+
+    const allowed = ["/start", "/panel", "/block", "/unblock", "/boardchat"];
+
+    if (!allowed.includes(cmd)) {
+      return ctx.reply("❌ This command is not available or only for Admin 👮‍♂️");
+    }
+  }
 });
 
 /* ========================= */
