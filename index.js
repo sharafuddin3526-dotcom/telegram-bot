@@ -113,7 +113,7 @@ bot.action("check_join", async (ctx) => {
    ========================= */
 
 bot.command("panel", (ctx) => {
-  ctx.reply("🍊 Orange Carrier Panel 🍊
+  ctx.reply(`🍊 Orange Carrier Panel 🍊
 ━━━━━━━━━━━━━━━
 
 ✉️ Email ➗
@@ -132,7 +132,7 @@ bot.command("panel", (ctx) => {
 ❌ No Available Range ✔️
 
 ━━━━━━━━━━━━━━━
-🔥 Stay Connected With Smart Method 🔥");
+🔥 Stay Connected With Smart Method 🔥`);
 });
 
 /* =========================
