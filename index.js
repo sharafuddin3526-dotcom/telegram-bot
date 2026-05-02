@@ -6,7 +6,7 @@ const bot = new Telegraf(BOT_TOKEN);
 
 /* =========================
    CONFIG
-   ========================= */
+========================= */
 
 const ADMIN_ID = 8136997138;
 const METHOD_CHANNEL = "@Global_Method_Channel";
@@ -14,13 +14,14 @@ const GROUP_ID = "-1003527248014";
 const DB_FILE = "./db.json";
 
 /* =========================
-   REPLY SYSTEM STORAGE
-   ========================= */
+   REPLY SYSTEM
+========================= */
+
 const pendingReply = {};
 
 /* =========================
    DATABASE (BAN SYSTEM)
-   ========================= */
+========================= */
 
 function loadDB() {
   if (!fs.existsSync(DB_FILE)) {
@@ -40,7 +41,7 @@ function isBanned(id) {
 
 /* =========================
    JOIN CHECK
-   ========================= */
+========================= */
 
 async function isJoined(ctx) {
   try {
@@ -53,36 +54,27 @@ async function isJoined(ctx) {
 
 /* =========================
    JOIN UI
-   ========================= */
+========================= */
 
 function joinUI() {
   return {
     reply_markup: {
       inline_keyboard: [
         [
-          {
-            text: "⚙️ Method Channel",
-            url: "https://t.me/Global_Method_Channel",
-          },
-          {
-            text: "📢 Main Channel",
-            url: "https://t.me/+75BQ2Qw9UZI4OTM1M",
-          },
+          { text: "⚙️ Method Channel", url: "https://t.me/Global_Method_Channel" },
+          { text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" }
         ],
         [
-          {
-            text: "🔄 Check Joined",
-            callback_data: "check_join",
-          },
-        ],
-      ],
-    },
+          { text: "🔄 Check Joined", callback_data: "check_join" }
+        ]
+      ]
+    }
   };
 }
 
 /* =========================
    START
-   ========================= */
+========================= */
 
 bot.start(async (ctx) => {
   const ok = await isJoined(ctx);
@@ -91,26 +83,24 @@ bot.start(async (ctx) => {
     return ctx.reply("⚠️ Please join required channels first 🚀", joinUI());
   }
 
-  ctx.reply("🌸 Bot started. You can use /panel /start 🚀");
+  ctx.reply("🌸 Bot started. Use /panel /start 🚀");
 });
 
 /* =========================
    CHECK JOIN BUTTON
-   ========================= */
+========================= */
 
 bot.action("check_join", async (ctx) => {
   const ok = await isJoined(ctx);
 
-  if (!ok) {
-    return ctx.answerCbQuery("❌ You are not joined yet");
-  }
+  if (!ok) return ctx.answerCbQuery("❌ Not joined yet");
 
-  await ctx.editMessageText("✅ Verified! You can use the bot now 🚀");
+  await ctx.editMessageText("✅ Verified! You can use the bot 🚀");
 });
 
 /* =========================
-   PANEL (USER + ADMIN)
-   ========================= */
+   PANEL
+========================= */
 
 bot.command("panel", (ctx) => {
   ctx.reply(`🍊 Orange Carrier Panel 🍊
@@ -123,145 +113,113 @@ bot.command("panel", (ctx) => {
 ↪️ Onetimeuse ✅
 
 🌐 Panel ➗
-👉 https://www.orangecarrier.com ✅
+👉 https://www.orangecarrier.com
 
-🆘 Support ID ➗
-👉 @Smart_Method_Owner 👤
+🆘 Support ➗
+👉 @Smart_Method_Owner
 
-📌 Range Status ➗
-❌ No Available Range ✔️
-
-━━━━━━━━━━━━━━━
-🔥 Stay Connected With Smart Method 🔥`);
+━━━━━━━━━━━━━━━`);
 });
 
 /* =========================
-   BOARDCHAT (ADMIN ONLY)
-   ========================= */
+   BOARDCHAT (ADMIN)
+========================= */
 
 bot.command("boardchat", async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply("❌ This command is only for Admin 👮‍♂️");
-  }
+  if (ctx.from.id !== ADMIN_ID)
+    return ctx.reply("❌ Admin only command");
 
   const msg = ctx.message.text.split(" ").slice(1).join(" ");
-  if (!msg) return ctx.reply("❌ Use: /boardchat your message");
+  if (!msg) return ctx.reply("❌ /boardchat message");
 
-  await bot.telegram.sendMessage(GROUP_ID, `📢 ADMIN BROADCAST:\n\n${msg}`);
-  ctx.reply("✅ Message sent to group");
+  await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
+  ctx.reply("✅ Sent to group");
 });
 
 /* =========================
-   BLOCK (ADMIN ONLY)
-   ========================= */
+   BLOCK
+========================= */
 
 bot.command("block", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply("❌ Only admin can use this command 👮‍♂️");
-  }
+  if (ctx.from.id !== ADMIN_ID)
+    return ctx.reply("❌ Admin only");
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ Use: /block userID");
+  if (!id) return ctx.reply("❌ /block userID");
 
   const db = loadDB();
   if (!db.banned.includes(String(id))) db.banned.push(String(id));
   saveDB(db);
 
-  ctx.reply(`⛔ User ${id} blocked`);
+  ctx.reply(`⛔ Blocked ${id}`);
 });
 
 /* =========================
-   UNBLOCK (ADMIN ONLY)
-   ========================= */
+   UNBLOCK
+========================= */
 
 bot.command("unblock", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply("❌ Only admin can use this command 👮‍♂️");
-  }
+  if (ctx.from.id !== ADMIN_ID)
+    return ctx.reply("❌ Admin only");
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ Use: /unblock userID");
+  if (!id) return ctx.reply("❌ /unblock userID");
 
   const db = loadDB();
-  db.banned = db.banned.filter((u) => u !== String(id));
+  db.banned = db.banned.filter(u => u !== String(id));
   saveDB(db);
 
-  ctx.reply(`✅ User ${id} unblocked`);
+  ctx.reply(`✅ Unblocked ${id}`);
 });
 
 /* =========================
-   REPLY BUTTON HANDLER
-   ========================= */
+   REPLY BUTTON
+========================= */
 
 bot.action(/reply_(\d+)/, async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
+  if (ctx.from.id !== ADMIN_ID)
     return ctx.answerCbQuery("❌ Not allowed");
-  }
 
   const userId = ctx.match[1];
   pendingReply[ADMIN_ID] = userId;
 
-  await ctx.reply("✍️ এখন reply লিখো...");
+  ctx.reply("✍️ এখন reply লিখো...");
 });
 
 /* =========================
-   MAIN MESSAGE HANDLER
-   ========================= */
+   MESSAGE HANDLER
+========================= */
 
 bot.on("text", async (ctx) => {
   const text = ctx.message.text;
   const id = ctx.from.id;
 
-  /* BAN CHECK */
-  if (isBanned(id)) {
-    return ctx.reply("⛔ You are banned from using this bot.");
-  }
+  if (isBanned(id)) return ctx.reply("⛔ Banned user");
 
-  /* JOIN CHECK */
   const ok = await isJoined(ctx);
-  if (!ok) return ctx.reply("⚠️ Join channel first 🚀", joinUI());
+  if (!ok) return ctx.reply("⚠️ Join first", joinUI());
 
   /* ADMIN REPLY MODE */
   if (id === ADMIN_ID && pendingReply[ADMIN_ID]) {
-    const targetUser = pendingReply[ADMIN_ID];
+    const userId = pendingReply[ADMIN_ID];
 
-    await ctx.telegram.sendMessage(
-      targetUser,
-      `💬 Admin Reply:\n\n${text}`
-    );
+    await ctx.telegram.sendMessage(userId, `💬 Admin Reply:\n\n${text}`);
 
     pendingReply[ADMIN_ID] = null;
-    return ctx.reply("✅ Reply sent to user");
+    return ctx.reply("✅ Sent to user");
   }
 
-  /* COMMAND BLOCK FOR USERS */
-  if (
-    text.startsWith("/block") ||
-    text.startsWith("/unblock") ||
-    text.startsWith("/boardchat")
-  ) {
-    return ctx.reply("❌ This command is only for Admin 👮‍♂️");
-  }
+  const user = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
 
-  const user = ctx.from.username
-    ? `@${ctx.from.username}`
-    : ctx.from.first_name;
-
-  /* SEND TO ADMIN WITH REPLY BUTTON */
   await ctx.telegram.sendMessage(
     ADMIN_ID,
-    `📩 NEW MESSAGE\n\n👤 ${user}\n🆔 ${id}\n\n💬 ${text}`,
+    `📩 MESSAGE\n\n👤 ${user}\n🆔 ${id}\n\n💬 ${text}`,
     {
       reply_markup: {
         inline_keyboard: [
-          [
-            {
-              text: "💬 Reply",
-              callback_data: `reply_${id}`,
-            },
-          ],
-        ],
-      },
+          [{ text: "💬 Reply", callback_data: `reply_${id}` }]
+        ]
+      }
     }
   );
 
@@ -269,27 +227,20 @@ bot.on("text", async (ctx) => {
 });
 
 /* =========================
-   RANDOM GROUP MESSAGE
-   ========================= */
+   RANDOM GROUP MSG
+========================= */
 
 const randomMessages = [
   "🚀 System Active",
   "💡 Learn daily",
   "🔥 Stay focused",
-  "📢 Update soon",
   "⚡ Bot running",
-  "🌸 Keep growing",
+  "🌸 Keep growing"
 ];
 
 setInterval(async () => {
-  try {
-    const msg =
-      randomMessages[Math.floor(Math.random() * randomMessages.length)];
-
-    await bot.telegram.sendMessage(GROUP_ID, msg);
-  } catch (e) {
-    console.log("random error:", e.message);
-  }
+  const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+  await bot.telegram.sendMessage(GROUP_ID, msg);
 }, 120000);
 
 /* ========================= */
