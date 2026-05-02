@@ -91,7 +91,7 @@ bot.start(async (ctx) => {
     return ctx.reply("⚠️ Please join required channels first 🚀", joinUI());
   }
 
-  ctx.reply("🌸 Bot started. You can use /panel 🚀");
+  ctx.reply("🌸 Bot started. You can use /panel /start 🚀");
 });
 
 /* =========================
