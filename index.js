@@ -15,7 +15,7 @@ const GROUP_ID = "-1003527248014";
 const DB_FILE = "./db.json";
 
 /* =========================
-   DB SYSTEM
+   DATABASE (BAN SYSTEM)
    ========================= */
 
 function loadDB() {
@@ -60,11 +60,20 @@ function joinUI() {
     reply_markup: {
       inline_keyboard: [
         [
-          { text: "⚙️ Method Channel", url: "https://t.me/Global_Method_Channel" },
-          { text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" }
+          {
+            text: "⚙️ Method Channel",
+            url: "https://t.me/Global_Method_Channel"
+          },
+          {
+            text: "📢 Main Channel",
+            url: "https://t.me/+75BQ2Qw9UZI4OTM1M"
+          }
         ],
         [
-          { text: "🔄 Check Joined", callback_data: "check_join" }
+          {
+            text: "🔄 Check Joined",
+            callback_data: "check_join"
+          }
         ]
       ]
     }
@@ -100,20 +109,19 @@ bot.action("check_join", async (ctx) => {
 });
 
 /* =========================
-   ADMIN REPLY SYSTEM (FIXED)
+   REPLY SYSTEM FIXED
    ========================= */
 
 const pendingReply = {};
 
 /* =========================
-   MESSAGE HANDLER
+   MAIN MESSAGE HANDLER
    ========================= */
 
 bot.on("text", async (ctx) => {
   const text = ctx.message.text;
   const userId = ctx.from.id;
 
-  /* ignore commands */
   if (text.startsWith("/")) return;
 
   /* BAN CHECK */
@@ -127,23 +135,29 @@ bot.on("text", async (ctx) => {
     return ctx.reply("⚠️ Join Method Channel first 🚀", joinUI());
   }
 
-  /* ================= ADMIN REPLY MODE ================= */
-  if (pendingReply[ADMIN_ID] === userId) {
-    await ctx.telegram.sendMessage(userId, `
+  /* ========================
+     ADMIN REPLY MODE FIX
+     ======================== */
+
+  if (userId === ADMIN_ID && pendingReply[ADMIN_ID]) {
+    const targetUser = pendingReply[ADMIN_ID];
+
+    await ctx.telegram.sendMessage(targetUser, `
 💬 Admin Reply:
 
 ${text}
 `);
 
     pendingReply[ADMIN_ID] = null;
-    return ctx.reply("✅ Reply sent to user");
+
+    return ctx.reply("✅ Reply sent successfully");
   }
 
   const user =
     ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
 
   /* SEND TO ADMIN */
-  const adminMsg = `
+  await ctx.telegram.sendMessage(ADMIN_ID, `
 📩 NEW USER MESSAGE
 
 👤 User: ${user}
@@ -151,9 +165,7 @@ ${text}
 
 💬 Message:
 ${text}
-`;
-
-  await ctx.telegram.sendMessage(ADMIN_ID, adminMsg, {
+`, {
     reply_markup: {
       inline_keyboard: [
         [
@@ -170,7 +182,7 @@ ${text}
 });
 
 /* =========================
-   REPLY BUTTON FIX
+   REPLY BUTTON HANDLER
    ========================= */
 
 bot.action(/reply_(\d+)/, async (ctx) => {
@@ -179,9 +191,10 @@ bot.action(/reply_(\d+)/, async (ctx) => {
   }
 
   const userId = ctx.match[1];
+
   pendingReply[ADMIN_ID] = userId;
 
-  await ctx.reply("✍️ এখন reply message লিখো...");
+  await ctx.reply("✍️ এখন reply লিখো...");
 });
 
 /* =========================
@@ -194,6 +207,7 @@ bot.command("panel", (ctx) => {
 
 bot.command("block", (ctx) => {
   if (ctx.from.id !== ADMIN_ID) return;
+
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("❌ /block userID");
 
@@ -206,6 +220,7 @@ bot.command("block", (ctx) => {
 
 bot.command("unblock", (ctx) => {
   if (ctx.from.id !== ADMIN_ID) return;
+
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("❌ /unblock userID");
 
