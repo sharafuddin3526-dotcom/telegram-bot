@@ -95,7 +95,7 @@ function joinUI() {
 }
 
 /* =========================
-   START COMMAND
+   START
    ========================= */
 
 bot.start(async (ctx) => {
@@ -131,13 +131,15 @@ bot.action("check_join", async (ctx) => {
 });
 
 /* =========================
-   USER MESSAGE HANDLER
+   USER MESSAGE + ADMIN REPLY BUTTON
    ========================= */
+
+const pendingReply = {};
 
 bot.on("text", async (ctx) => {
   const text = ctx.message.text;
 
-  // ❌ ignore commands
+  // ignore commands
   if (text.startsWith("/")) return;
 
   const ok = await isJoined(ctx);
@@ -151,8 +153,7 @@ bot.on("text", async (ctx) => {
       ? `@${ctx.from.username}`
       : ctx.from.first_name;
 
-  ctx.reply("📨 Sent to admin, please wait...");
-
+  // admin message
   const adminMsg = `
 📩 NEW USER MESSAGE
 
@@ -165,11 +166,77 @@ ${text}
 ━━━━━━━━━━━━━━━
 `;
 
-  ctx.telegram.sendMessage(ADMIN_ID, adminMsg);
+  await ctx.telegram.sendMessage(ADMIN_ID, adminMsg, {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "💬 Reply",
+            callback_data: `reply_${ctx.from.id}`
+          }
+        ]
+      ]
+    }
+  });
+
+  ctx.reply("📨 Sent to admin, please wait...");
 });
 
 /* =========================
-   RANDOM MESSAGE SYSTEM
+   ADMIN REPLY SYSTEM
+   ========================= */
+
+bot.action(/reply_(\d+)/, async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) {
+    return ctx.answerCbQuery("❌ Not allowed");
+  }
+
+  const userId = ctx.match[1];
+  pendingReply[ctx.from.id] = userId;
+
+  await ctx.reply("✍️ Send your reply message now...");
+});
+
+bot.on("text", async (ctx) => {
+  const adminId = ctx.from.id;
+
+  if (pendingReply[adminId]) {
+    const userId = pendingReply[adminId];
+
+    await ctx.telegram.sendMessage(userId, `
+💬 Admin Reply:
+
+${ctx.message.text}
+`);
+
+    await ctx.reply("✅ Reply sent successfully");
+    delete pendingReply[adminId];
+    return;
+  }
+});
+
+/* =========================
+   COMMAND SYSTEM
+   ========================= */
+
+bot.command("panel", (ctx) => {
+  ctx.reply("🚧 Coming soon this feature 🚀");
+});
+
+bot.command("block", (ctx) => {
+  ctx.reply("⚠️ This command is only for Admin 👮‍♂️");
+});
+
+bot.command("unblock", (ctx) => {
+  ctx.reply("⚠️ This command is only for Admin 👮‍♂️");
+});
+
+bot.command("boardchat", (ctx) => {
+  ctx.reply("⚠️ This command is only for Admin 👮‍♂️");
+});
+
+/* =========================
+   RANDOM 2 MIN SYSTEM
    ========================= */
 
 async function sendRandom() {
