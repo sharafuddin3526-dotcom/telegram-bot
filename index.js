@@ -4,7 +4,7 @@ import { BOT_TOKEN } from "./config.js";
 const bot = new Telegraf(BOT_TOKEN);
 
 /* =========================
-   ONLY METHOD CHANNEL CHECK
+   METHOD CHANNEL (ONLY THIS REQUIRED)
    ========================= */
 
 const METHOD_CHANNEL = "@Global_Method_Channel";
@@ -27,7 +27,7 @@ async function isJoined(ctx) {
 }
 
 /* =========================
-   JOIN UI (MAIN + METHOD BUTTON)
+   JOIN BUTTON MESSAGE
    ========================= */
 
 function joinUI() {
@@ -36,11 +36,7 @@ function joinUI() {
       inline_keyboard: [
         [
           {
-            text: "📢 Main Channel (Visit)",
-            url: "https://t.me/+75BQ2Qw9UZI4OTM1M"
-          },
-          {
-            text: "⚙️ Method Channel (Must Join)",
+            text: "⚙️ Join Method Channel",
             url: "https://t.me/Global_Method_Channel"
           }
         ],
@@ -64,35 +60,62 @@ bot.start(async (ctx) => {
 
   if (!ok) {
     return ctx.reply(
-      "⚠️ You must join Method Channel to use this bot 🚀",
+      "⚠️ You must join Method Channel first to use this bot 🚀",
       joinUI()
     );
   }
 
-  ctx.reply("✅ Welcome! You can use the bot now 🚀");
+  const name = ctx.from.first_name || "User";
+
+  /* 🇧🇩 BANGLA MESSAGE */
+  const bn = `
+🌸 স্বাগতম ${name} 🤖
+
+✅ আপনি এখন Smart Support Bot ব্যবহার করতে পারবেন।
+
+📝 আপনার কোনো সমস্যা বা প্রশ্ন থাকলে এখানে লিখে পাঠান।
+আমাদের এডমিন খুব দ্রুত রিপ্লাই দিবে ইনশাআল্লাহ।
+
+━━━━━━━━━━━━━━━
+❤️ ধন্যবাদ Smart Method Family ব্যবহার করার জন্য
+`;
+
+  /* 🇬🇧 ENGLISH MESSAGE */
+  const en = `
+🌸 Welcome ${name} 🤖
+
+✅ You can now use Smart Support Bot.
+
+📝 If you have any problem or question, just send message here.
+Our admin will reply as soon as possible InshaAllah.
+
+━━━━━━━━━━━━━━━
+❤️ Thank you for using Smart Method Family
+`;
+
+  ctx.reply(bn);
+  ctx.reply(en);
 });
 
 /* =========================
-   CHECK BUTTON
+   CHECK JOIN BUTTON
    ========================= */
 
 bot.action("check_join", async (ctx) => {
   const ok = await isJoined(ctx);
 
   if (!ok) {
-    return ctx.answerCbQuery("❌ Method Channel not joined");
+    return ctx.answerCbQuery("❌ Not joined yet");
   }
 
-  await ctx.editMessageText("✅ Verified! Welcome 🚀");
+  await ctx.editMessageText("✅ Verified! You can use the bot now 🚀");
 });
 
 /* =========================
-   BLOCK ALL IF NOT JOINED METHOD
+   USER MESSAGE SYSTEM
    ========================= */
 
-bot.use(async (ctx, next) => {
-  if (!ctx.chat) return;
-
+bot.on("text", async (ctx) => {
   const ok = await isJoined(ctx);
 
   if (!ok) {
@@ -102,7 +125,32 @@ bot.use(async (ctx, next) => {
     );
   }
 
-  return next();
+  const userMsg = ctx.message.text;
+  const name =
+    ctx.from.username
+      ? `@${ctx.from.username}`
+      : ctx.from.first_name;
+
+  /* USER CONFIRMATION */
+  ctx.reply(
+    "📨 Your message has been sent to admin ✅\n⏳ Please wait for reply..."
+  );
+
+  /* SEND TO ADMIN */
+  const adminMsg = `
+📩 NEW USER MESSAGE
+
+👤 User: ${name}
+🆔 ID: ${ctx.chat.id}
+
+💬 Message:
+${userMsg}
+
+━━━━━━━━━━━━━━━
+⏳ Reply ASAP
+`;
+
+  ctx.telegram.sendMessage(ctx.chat.id, adminMsg);
 });
 
 /* ========================= */
