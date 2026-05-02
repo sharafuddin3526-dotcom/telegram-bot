@@ -14,7 +14,12 @@ const GROUP_ID = "-1003527248014";
 const DB_FILE = "./db.json";
 
 /* =========================
-   DATABASE (BAN)
+   REPLY SYSTEM STORAGE
+   ========================= */
+const pendingReply = {};
+
+/* =========================
+   DATABASE (BAN SYSTEM)
    ========================= */
 
 function loadDB() {
@@ -39,10 +44,7 @@ function isBanned(id) {
 
 async function isJoined(ctx) {
   try {
-    const res = await ctx.telegram.getChatMember(
-      METHOD_CHANNEL,
-      ctx.from.id
-    );
+    const res = await ctx.telegram.getChatMember(METHOD_CHANNEL, ctx.from.id);
     return !(res.status === "left" || res.status === "kicked");
   } catch {
     return false;
@@ -60,32 +62,50 @@ function joinUI() {
         [
           {
             text: "⚙️ Method Channel",
-            url: "https://t.me/Global_Method_Channel"
-          }
+            url: "https://t.me/Global_Method_Channel",
+          },
+          {
+            text: "📢 Main Channel",
+            url: "https://t.me/+75BQ2Qw9UZI4OTM1M",
+          },
         ],
         [
           {
-            text: "📢 Main Channel",
-            url: "https://t.me/+75BQ2Qw9UZI4OTM1M"
-          }
-        ]
-      ]
-    }
+            text: "🔄 Check Joined",
+            callback_data: "check_join",
+          },
+        ],
+      ],
+    },
   };
 }
 
 /* =========================
-   START (USER + ADMIN)
+   START
    ========================= */
 
 bot.start(async (ctx) => {
   const ok = await isJoined(ctx);
 
   if (!ok) {
-    return ctx.reply("⚠️ Please join required channels first", joinUI());
+    return ctx.reply("⚠️ Please join required channels first 🚀", joinUI());
   }
 
-  ctx.reply("🌸 Bot started. You can use /panel or /start 🚀");
+  ctx.reply("🌸 Bot started. You can use /panel 🚀");
+});
+
+/* =========================
+   CHECK JOIN BUTTON
+   ========================= */
+
+bot.action("check_join", async (ctx) => {
+  const ok = await isJoined(ctx);
+
+  if (!ok) {
+    return ctx.answerCbQuery("❌ You are not joined yet");
+  }
+
+  await ctx.editMessageText("✅ Verified! You can use the bot now 🚀");
 });
 
 /* =========================
@@ -106,7 +126,7 @@ bot.command("boardchat", async (ctx) => {
   }
 
   const msg = ctx.message.text.split(" ").slice(1).join(" ");
-  if (!msg) return ctx.reply("❌ Use /boardchat message");
+  if (!msg) return ctx.reply("❌ Use: /boardchat your message");
 
   await bot.telegram.sendMessage(GROUP_ID, `📢 ADMIN BROADCAST:\n\n${msg}`);
   ctx.reply("✅ Message sent to group");
@@ -118,14 +138,14 @@ bot.command("boardchat", async (ctx) => {
 
 bot.command("block", (ctx) => {
   if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply("❌ Only admin can use this command");
+    return ctx.reply("❌ Only admin can use this command 👮‍♂️");
   }
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ Use /block userID");
+  if (!id) return ctx.reply("❌ Use: /block userID");
 
   const db = loadDB();
-  if (!db.banned.includes(id)) db.banned.push(id);
+  if (!db.banned.includes(String(id))) db.banned.push(String(id));
   saveDB(db);
 
   ctx.reply(`⛔ User ${id} blocked`);
@@ -137,17 +157,32 @@ bot.command("block", (ctx) => {
 
 bot.command("unblock", (ctx) => {
   if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply("❌ Only admin can use this command");
+    return ctx.reply("❌ Only admin can use this command 👮‍♂️");
   }
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ Use /unblock userID");
+  if (!id) return ctx.reply("❌ Use: /unblock userID");
 
   const db = loadDB();
-  db.banned = db.banned.filter(u => u !== id);
+  db.banned = db.banned.filter((u) => u !== String(id));
   saveDB(db);
 
   ctx.reply(`✅ User ${id} unblocked`);
+});
+
+/* =========================
+   REPLY BUTTON HANDLER
+   ========================= */
+
+bot.action(/reply_(\d+)/, async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) {
+    return ctx.answerCbQuery("❌ Not allowed");
+  }
+
+  const userId = ctx.match[1];
+  pendingReply[ADMIN_ID] = userId;
+
+  await ctx.reply("✍️ এখন reply লিখো...");
 });
 
 /* =========================
@@ -163,11 +198,29 @@ bot.on("text", async (ctx) => {
     return ctx.reply("⛔ You are banned from using this bot.");
   }
 
+  /* JOIN CHECK */
   const ok = await isJoined(ctx);
-  if (!ok) return ctx.reply("⚠️ Join channel first", joinUI());
+  if (!ok) return ctx.reply("⚠️ Join channel first 🚀", joinUI());
 
-  /* IGNORE COMMANDS HERE */
-  if (text.startsWith("/block") || text.startsWith("/unblock") || text.startsWith("/boardchat")) {
+  /* ADMIN REPLY MODE */
+  if (id === ADMIN_ID && pendingReply[ADMIN_ID]) {
+    const targetUser = pendingReply[ADMIN_ID];
+
+    await ctx.telegram.sendMessage(
+      targetUser,
+      `💬 Admin Reply:\n\n${text}`
+    );
+
+    pendingReply[ADMIN_ID] = null;
+    return ctx.reply("✅ Reply sent to user");
+  }
+
+  /* COMMAND BLOCK FOR USERS */
+  if (
+    text.startsWith("/block") ||
+    text.startsWith("/unblock") ||
+    text.startsWith("/boardchat")
+  ) {
     return ctx.reply("❌ This command is only for Admin 👮‍♂️");
   }
 
@@ -175,15 +228,23 @@ bot.on("text", async (ctx) => {
     ? `@${ctx.from.username}`
     : ctx.from.first_name;
 
-  /* SEND TO ADMIN */
-  await ctx.telegram.sendMessage(ADMIN_ID, `
-📩 NEW MESSAGE
-
-👤 ${user}
-🆔 ${id}
-
-💬 ${text}
-`);
+  /* SEND TO ADMIN WITH REPLY BUTTON */
+  await ctx.telegram.sendMessage(
+    ADMIN_ID,
+    `📩 NEW MESSAGE\n\n👤 ${user}\n🆔 ${id}\n\n💬 ${text}`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "💬 Reply",
+              callback_data: `reply_${id}`,
+            },
+          ],
+        ],
+      },
+    }
+  );
 
   ctx.reply("📨 Sent to admin");
 });
@@ -198,7 +259,7 @@ const randomMessages = [
   "🔥 Stay focused",
   "📢 Update soon",
   "⚡ Bot running",
-  "🌸 Keep growing"
+  "🌸 Keep growing",
 ];
 
 setInterval(async () => {
@@ -208,7 +269,7 @@ setInterval(async () => {
 
     await bot.telegram.sendMessage(GROUP_ID, msg);
   } catch (e) {
-    console.log("random error");
+    console.log("random error:", e.message);
   }
 }, 120000);
 
