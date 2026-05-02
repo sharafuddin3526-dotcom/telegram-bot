@@ -113,7 +113,26 @@ bot.action("check_join", async (ctx) => {
    ========================= */
 
 bot.command("panel", (ctx) => {
-  ctx.reply("🖼 Coming soon this feature 🚀");
+  ctx.reply("🍊 Orange Carrier Panel 🍊
+━━━━━━━━━━━━━━━
+
+✉️ Email ➗
+✅ Mariyaakter1028@gmail.com
+
+🔐 Password ➗
+↪️ Onetimeuse ✅
+
+🌐 Panel ➗
+👉 https://www.orangecarrier.com ✅
+
+🆘 Support ID ➗
+👉 @Smart_Method_Owner 👤
+
+📌 Range Status ➗
+❌ No Available Range ✔️
+
+━━━━━━━━━━━━━━━
+🔥 Stay Connected With Smart Method 🔥");
 });
 
 /* =========================
