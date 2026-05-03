@@ -52,22 +52,22 @@ function joinUI() {
   return {
     reply_markup: {
       inline_keyboard: [
-        [
-          { text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }
-        ],
-        [
-          { text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" }
-        ],
-        [
-          { text: "✅ Joined", callback_data: "check_join" }
-        ]
+        [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
+        [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" }],
+        [{ text: "✅ Joined", callback_data: "check_join" }]
       ]
     }
   };
 }
 
 /* =========================
-   START (FIXED CRASH HERE)
+   SUPPORT
+========================= */
+
+const support = {};
+
+/* =========================
+   START (FULL YOUR TEXT)
 ========================= */
 
 bot.start(async (ctx) => {
@@ -76,7 +76,6 @@ bot.start(async (ctx) => {
 
   const joined = await isJoined(ctx);
 
-  // ❌ NOT JOINED
   if (!joined) {
     return ctx.reply(
       "⚠️ Please join our channels first to use this bot 🚀",
@@ -88,7 +87,6 @@ bot.start(async (ctx) => {
     db.users[userId] = { started: false };
   }
 
-  // first time after join
   if (!db.users[userId].started) {
     db.users[userId].started = true;
     saveDB(db);
@@ -96,18 +94,19 @@ bot.start(async (ctx) => {
     return ctx.reply(`🎉 Congratulations!
 
 🇧🇩 আপনি এখন এই বট ব্যবহার করতে পারবেন।
-🇬🇧 You can now use this bot.
+
+🇬🇧 You can now use this bot freely.
 
 📌 If you need help, type /help
-🌐 Website: https://mdshahavuddinm904.github.io/Smart-Method-Owner/`);
+
+🌐 Website:
+https://mdshahavuddinm904.github.io/Smart-Method-Owner/`);
   }
 
-  // second time
   return ctx.reply(`👋 Welcome back!
 
-📌 Use:
-• /panel
-• /help`);
+📌 /panel → Open Panel
+📌 /help → Support`);
 });
 
 /* =========================
@@ -121,28 +120,16 @@ bot.action("check_join", async (ctx) => {
     return ctx.answerCbQuery("❌ Not Joined", { show_alert: true });
   }
 
-  await ctx.editMessageText(
-    "🎉 Congratulations!
+  await ctx.editMessageText(`🎉 Congratulations!
 
 🇧🇩 আপনি এখন এই বট ব্যবহার করতে পারবেন।
-🇬🇧 You can now use this bot.
+
+🇬🇧 You can now use this bot freely.
 
 📌 If you need help, type /help
-🌐 Website: https://mdshahavuddinm904.github.io/Smart-Method-Owner/"
-  );
-});
 
-/* =========================
-   HELP
-========================= */
-
-bot.command("help", (ctx) => {
-  ctx.reply(`📌 HELP MENU
-
-• /panel → Get Panel Access
-• Support button below
-
-🇧🇩 সাহায্যের জন্য Support এ ক্লিক করুন`);
+🌐 Website:
+https://mdshahavuddinm904.github.io/Smart-Method-Owner/`);
 });
 
 /* =========================
@@ -156,25 +143,41 @@ bot.command("panel", (ctx) => {
         [{ text: "📧 Copy Gmail", callback_data: "gmail" }],
         [{ text: "🔐 Copy Password", callback_data: "pass" }],
         [{ text: "🌐 Open Panel", url: "https://www.orangecarrier.com" }],
-        [{ text: "👤 Support", callback_data: "support_btn" }]
+        [{ text: "👤 Support", callback_data: "support" }]
       ]
     }
   });
 });
 
-bot.action("gmail", (ctx) => ctx.reply("📧 Gmail: Mariyaakter1028@gmail.com"));
-bot.action("pass", (ctx) => ctx.reply("🔐 Password: 123456"));
+bot.action("gmail", (ctx) => ctx.reply("📧 Gmail: mariyaakter1028@gmail.com"));
+bot.action("pass", (ctx) => ctx.reply("🔐 Password: Onetimeuse"));
+
+/* =========================
+   HELP
+========================= */
+
+bot.command("help", (ctx) => {
+  ctx.reply(`📌 HELP MENU
+
+🔹 /panel → Get Panel Access
+🔹 Support button নিচে
+
+🇧🇩 সাহায্যের জন্য Support এ ক্লিক করুন`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "📩 Support", callback_data: "support" }]
+      ]
+    }
+  });
+});
 
 /* =========================
    SUPPORT
 ========================= */
 
-const support = {};
-
-bot.action("support_btn", (ctx) => {
+bot.action("support", (ctx) => {
   support[ctx.from.id] = true;
-
-  ctx.reply("✍️ Write your message for admin 📩");
+  ctx.reply("✍️ Write your message. It will be sent to admin 📩");
 });
 
 /* =========================
@@ -192,15 +195,20 @@ bot.on("text", async (ctx) => {
 
     await ctx.telegram.sendMessage(
       ADMIN_ID,
-      `📩 SUPPORT\n\n👤 ${ctx.from.first_name}\n🆔 ${id}\n\n💬 ${text}`
+      `📩 SUPPORT MESSAGE
+
+👤 ${ctx.from.first_name}
+🆔 ${id}
+
+💬 ${text}`
     );
 
-    return ctx.reply("✅ Sent to admin");
+    return ctx.reply("📩 Your message has been sent to Admin successfully");
   }
 });
 
 /* =========================
-   RANDOM SMS
+   RANDOM SMS (UNCHANGED STYLE)
 ========================= */
 
 const randomMessages = [
@@ -214,15 +222,20 @@ const randomMessages = [
 setInterval(async () => {
   const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
 
-  const sent = await bot.telegram.sendMessage(
+  await bot.telegram.sendMessage(
     "-1003527248014",
-    "📢 RANDOM SMS\n\n" + msg
+    `📢 RANDOM SMS
+
+${msg}`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" }],
+          [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }]
+        ]
+      }
+    }
   );
-
-  setTimeout(() => {
-    bot.telegram.deleteMessage("-1003527248014", sent.message_id).catch(() => {});
-  }, 600000);
-
 }, 120000);
 
 /* ========================= */
