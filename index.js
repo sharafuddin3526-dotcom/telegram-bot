@@ -189,8 +189,8 @@ bot.command("boardchat", async (ctx) => {
 🔒 You do not have the required access level.
 
 ━━━━━━━━━━━━━━━
-💡 If you think this is a mistake, contact support`);
-});
+💡 If you think this is a mistake, contact support
+`);
   const msg = ctx.message.text.split(" ").slice(1).join(" ");
   if (!msg) return ctx.reply("❌ /boardchat message");
 
