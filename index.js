@@ -90,8 +90,18 @@ function randomButtons() {
   return {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }],
-        [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
+        [
+          {
+            text: "📢 Main Channel",
+            url: "https://t.me/+75BQ2Qw9UZI4OTM1",
+          },
+        ],
+        [
+          {
+            text: "⚙️ Global Channel",
+            url: "https://t.me/Global_Method_Channel",
+          },
+        ],
       ],
     },
   };
@@ -120,7 +130,12 @@ bot.use(async (ctx, next) => {
     return ctx.reply("⛔ You are blocked.");
   }
 
-  // join check for all commands + messages
+  // Allow /start always
+  if (ctx.message?.text?.startsWith("/start")) {
+    return next();
+  }
+
+  // Join check for all other commands/messages
   const joined = await isJoined(ctx);
   if (!joined) {
     return ctx.reply(
@@ -147,39 +162,42 @@ bot.start(async (ctx) => {
 
   const joined = await isJoined(ctx);
 
-  // Join না থাকলে join msg দিবে
+  // If not joined
   if (!joined) {
     return ctx.reply(
-      `⚠️ Access Denied 🚫
-
-You must join required channels before using this bot 📢
-
-✅ Join now and click "Check Joined"
-
-🔥 After verification, type /start again`,
+      "⚠️ Please join required channels first 🚀\n\n📢 Join then click Check Joined ✅",
       joinUI()
     );
   }
 
-  // Join থাকলে welcome msg দিবে
-  return ctx.reply(`🌸 Bot Started Successfully 🚀
+  // If already verified before
+  if (db.users[userId].joined === true) {
+    return ctx.reply(`🌸 Welcome Back! 🚀
 
-🎉 Welcome ${ctx.from.first_name}!
+🎉 Congratulations!
+আপনি এখন বটটি সম্পূর্ণভাবে ব্যবহার করতে পারবেন ✅
 
-📌 In this bot you will get:
+📌 Available Features:
+🔹 Free Orange Carrier Panel Access (/panel)
+🔹 Support System (/help)
+🔹 Auto Random Updates in Group
 
-✅ Free Panel Access
-✅ Admin Support System
-✅ Auto Random Updates
-✅ Secure Verified System
+💡 যদি কোনো সাহায্য প্রয়োজন হয় তাহলে /help command send করুন
 
-━━━━━━━━━━━━━━━
-📍 Commands:
+⚡ Smart Method System Active 🤖`);
+  }
 
-🔹 /panel → Get Orange Carrier Panel Access
-🔹 /help → Support & Help Menu
+  // First time verified
+  db.users[userId].joined = true;
+  saveDB(db);
 
-⚡ Smart Method System Active 🚀`);
+  return ctx.reply(`🎉 Congratulations! 🎉
+
+✅ আপনি এখন বটটি ব্যবহার করতে পারবেন!
+
+📌 যদি কোনো সাহায্য প্রয়োজন হয় তাহলে /help command send করুন
+
+🔹 /panel → To get Orange Carrier Panel Access 🚀`);
 });
 
 /* =========================
@@ -224,8 +242,8 @@ bot.action("contact_support", async (ctx) => {
 
   return ctx.reply(`📩 Support System Activated!
 
-✍️ Now write your message.
-Your message will be sent to the Admin ✅`);
+✍️ এখন আপনার মেসেজ লিখুন
+আপনার মেসেজ Admin এর কাছে চলে যাবে ✅`);
 });
 
 /* =========================
@@ -251,7 +269,7 @@ bot.command("panel", (ctx) => {
 
 bot.action("send_email", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply("📧 Gmail:\n\nmariyaakter1028@gmail.com");
+  ctx.reply("📧 Gmail:\n\nMariyaakter1028@gmail.com");
 });
 
 bot.action("send_pass", async (ctx) => {
@@ -273,6 +291,7 @@ const adminOnly = (ctx) => {
 
 bot.command("block", (ctx) => {
   if (!adminOnly(ctx)) return;
+
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("Usage: /block <user_id>");
 
@@ -285,6 +304,7 @@ bot.command("block", (ctx) => {
 
 bot.command("unblock", (ctx) => {
   if (!adminOnly(ctx)) return;
+
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("Usage: /unblock <user_id>");
 
@@ -297,6 +317,7 @@ bot.command("unblock", (ctx) => {
 
 bot.command("boardchat", (ctx) => {
   if (!adminOnly(ctx)) return;
+
   const msg = ctx.message.text.split(" ").slice(1).join(" ");
   if (!msg) return ctx.reply("Usage: /boardchat <message>");
 
@@ -361,7 +382,7 @@ bot.on("text", async (ctx) => {
 });
 
 /* =========================
-   RANDOM MESSAGE (AUTO DELETE)
+   RANDOM MESSAGE (AUTO DELETE + BUTTONS)
 ========================= */
 
 const randomMessages = [
@@ -404,6 +425,8 @@ setInterval(async () => {
     }, 600000);
   } catch {}
 }, 120000);
+
+/* ========================= */
 
 bot.launch();
 console.log("✅ Bot running...");
