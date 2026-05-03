@@ -29,8 +29,7 @@ function saveDB(data) {
 }
 
 function isBanned(id) {
-  const db = loadDB();
-  return db.banned.includes(String(id));
+  return loadDB().banned.includes(String(id));
 }
 
 /* =========================
@@ -45,10 +44,6 @@ async function isJoined(ctx) {
     return false;
   }
 }
-
-/* =========================
-   JOIN UI
-========================= */
 
 function joinUI() {
   return {
@@ -65,109 +60,79 @@ function joinUI() {
 }
 
 /* =========================
-   GLOBAL MIDDLEWARE (সুরক্ষা)
+   GLOBAL MIDDLEWARE
 ========================= */
 
 bot.use(async (ctx, next) => {
   if (!ctx.from) return next();
-  if (ctx.from.id === ADMIN_ID) return next(); // Admin সবসময় allowed
+  const userId = ctx.from.id;
 
-  if (isBanned(ctx.from.id)) {
-    return ctx.reply("⛔ You are blocked by admin.");
+  // Admin এর জন্য কোনো চেক নেই
+  if (userId === ADMIN_ID) return next();
+
+  if (isBanned(userId)) {
+    return ctx.reply("⛔ You are blocked.");
   }
 
   const joined = await isJoined(ctx);
   if (!joined) {
-    return ctx.reply("⚠️ Access Denied 🚫\n\nYou must join our channel first!", joinUI());
+    // শুধু /start ছাড়া সব কমান্ডে জয়েন করতে বলবে
+    if (ctx.message?.text?.startsWith('/start')) return next();
+    
+    return ctx.reply("⚠️ You must join our channel first to use commands!", joinUI());
   }
 
   return next();
 });
 
 /* =========================
-   START COMMAND
+   START
 ========================= */
 
 bot.start(async (ctx) => {
   const db = loadDB();
   const userId = String(ctx.from.id);
 
-  if (!db.users[userId]) {
-    db.users[userId] = { joined: false };
+  if (!db.users[userId]) db.users[userId] = { joined: false };
+
+  const isUserJoined = await isJoined(ctx);
+
+  if (!isUserJoined) {
+    return ctx.reply("⚠️ Please join the required channels first!", joinUI());
   }
 
-  const alreadyJoined = db.users[userId].joined;
-
-  if (!alreadyJoined) {
+  if (!db.users[userId].joined) {
     db.users[userId].joined = true;
     saveDB(db);
 
-    return ctx.reply(
-`🎉 **Congratulations!** 🎊
-
-🌸 You are now fully verified 💎
-🚀 All features unlocked!
-
-📌 Commands:
-• /panel → Orange Carrier Panel
-• /help  → Help & Support
-
-💡 Enjoy the bot!`
-    );
+    return ctx.reply(`🎉 **Congratulations!**\n\n🌸 You are now verified!\n🚀 Use /panel and /help`);
   }
 
-  // Welcome back
-  ctx.reply(
-`🌸 Bot Started Successfully 🚀
-
-👋 Welcome back, ${ctx.from.first_name}!
-
-📊 /panel → Get Orange Carrier Panel
-🆘 /help  → Need any help?`
-  );
+  ctx.reply(`🌸 Welcome back!\n\nUse /panel or /help`);
 });
 
 /* =========================
-   CHECK JOIN BUTTON
+   CHECK JOIN
 ========================= */
 
 bot.action("check_join", async (ctx) => {
   const ok = await isJoined(ctx);
-
-  if (!ok) {
-    return ctx.answerCbQuery("❌ NOT JOINED! Please join first.", { show_alert: true });
-  }
+  if (!ok) return ctx.answerCbQuery("❌ NOT JOINED", { show_alert: true });
 
   const db = loadDB();
   const userId = String(ctx.from.id);
-  if (!db.users[userId]) db.users[userId] = { joined: false };
-
-  db.users[userId].joined = true;
+  db.users[userId] = { joined: true };
   saveDB(db);
 
-  await ctx.editMessageText(
-`✅ Verification Successful!
-
-🌸 Bot Started Successfully 🚀
-
-Please type /start again to unlock all features 💎`
-  );
+  await ctx.editMessageText(`✅ Successfully Joined!\n\nNow type /start again.`);
 });
 
 /* =========================
-   HELP & PANEL
+   USER COMMANDS
 ========================= */
 
 bot.command("help", (ctx) => {
-  ctx.reply(
-`📌 **Help Menu**
-
-• /start - Restart Bot
-• /panel - Orange Carrier Panel
-• Just send any message for admin support
-
-Admin will reply as soon as possible.`
-  );
+  ctx.reply(`📌 **Help Menu**\n\n• /panel - Orange Carrier Panel\n• Send any message for admin support`);
 });
 
 bot.command("panel", (ctx) => {
@@ -183,54 +148,79 @@ bot.command("panel", (ctx) => {
   });
 });
 
+/* =========================
+   ADMIN COMMANDS
+========================= */
+
+bot.command(["block", "unblock", "boardchat"], (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) {
+    return ctx.reply("❌ This command is only for Admin.");
+  }
+
+  const command = ctx.message.text.split(" ")[0];
+
+  if (command === "/block") {
+    const id = ctx.message.text.split(" ")[1];
+    if (!id) return ctx.reply("Usage: /block <user_id>");
+    
+    const db = loadDB();
+    if (!db.banned.includes(id)) db.banned.push(id);
+    saveDB(db);
+    ctx.reply(`⛔ User ${id} has been blocked.`);
+  } 
+  else if (command === "/unblock") {
+    const id = ctx.message.text.split(" ")[1];
+    if (!id) return ctx.reply("Usage: /unblock <user_id>");
+    
+    const db = loadDB();
+    db.banned = db.banned.filter(u => u !== id);
+    saveDB(db);
+    ctx.reply(`✅ User ${id} has been unblocked.`);
+  } 
+  else if (command === "/boardchat") {
+    const msg = ctx.message.text.split(" ").slice(1).join(" ");
+    if (!msg) return ctx.reply("Usage: /boardchat <message>");
+    
+    bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
+    ctx.reply("✅ Message sent to group.");
+  }
+});
+
+/* =========================
+   BUTTON ACTIONS
+========================= */
+
 bot.action("send_email", async (ctx) => {
-  await ctx.answerCbQuery("Copied!");
+  await ctx.answerCbQuery();
   ctx.reply("📧 Gmail:\n\nmariyaakter1028@gmail.com");
 });
 
 bot.action("send_pass", async (ctx) => {
-  await ctx.answerCbQuery("Copied!");
+  await ctx.answerCbQuery();
   ctx.reply("🔐 Password:\n\nOnetimeuse");
 });
 
 /* =========================
-   RANDOM MESSAGE (৭ মিনিট পর ডিলিট)
+   RANDOM MESSAGE (7 মিনিট)
 ========================= */
 
 const randomMessages = [
-  "🌟 Stay strong, success is near 💪",
-  "🚀 Keep grinding, don’t stop 🔥",
-  "💡 Smart work always wins 🧠",
-  "🌸 Stay positive, stay focused 😊",
-  "⚡ System is active 🚀",
-  "📈 Your growth matters every day",
-  "💎 Small steps = big success 🏆",
-  "🔥 Never quit, just upgrade",
-  "🧠 Upgrade your mindset daily"
+  "🌟 Stay strong 💪", "🚀 Keep grinding 🔥", "💡 Smart work wins 🧠",
+  "🌸 Stay positive 😊", "⚡ System is active"
 ];
 
 setInterval(async () => {
   try {
     const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+    const sent = await bot.telegram.sendMessage(GROUP_ID, `📢 RANDOM SMS\n\n${msg}`);
 
-    const sent = await bot.telegram.sendMessage(
-      GROUP_ID,
-      `📢 RANDOM SMS\n\n${msg}`
-    );
-
-    // ৭ মিনিট পর ডিলিট
-    setTimeout(async () => {
-      try {
-        await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
-      } catch {}
-    }, 420000);
-
-  } catch (e) {
-    console.log("Random message error:", e.message);
-  }
+    setTimeout(() => {
+      bot.telegram.deleteMessage(GROUP_ID, sent.message_id).catch(() => {});
+    }, 420000); // 7 minutes
+  } catch {}
 }, 120000);
 
 /* ========================= */
 
 bot.launch();
-console.log("✅ Bot is running successfully...");
+console.log("✅ Bot running...");
