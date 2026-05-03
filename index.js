@@ -14,7 +14,7 @@ const GROUP_ID = "-1003527248014";
 const DB_FILE = "./db.json";
 
 /* =========================
-   DATABASE
+   DB
 ========================= */
 
 function loadDB() {
@@ -63,18 +63,32 @@ function joinUI() {
   };
 }
 
-function supportUI() {
+function panelUI() {
   return {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📩 Contact Support", callback_data: "contact_support" }]
+        [{ text: "📧 Copy Gmail", callback_data: "gmail" }],
+        [{ text: "🔐 Copy Password", callback_data: "pass" }],
+        [{ text: "🌐 Open Panel", url: "https://www.orangecarrier.com" }],
+        [{ text: "👤 Support", url: "https://t.me/Smart_Method_Owner" }]
+      ]
+    }
+  };
+}
+
+function randomButtons() {
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }],
+        [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }]
       ]
     }
   };
 }
 
 /* =========================
-   SUPPORT MEMORY
+   STATE
 ========================= */
 
 const supportPending = {};
@@ -88,16 +102,22 @@ bot.use(async (ctx, next) => {
   if (!ctx.from) return next();
 
   const id = ctx.from.id;
+  const text = ctx.message?.text || "";
 
   if (id === ADMIN_ID) return next();
-
   if (isBanned(id)) return ctx.reply("⛔ Blocked");
 
-  const text = ctx.message?.text || "";
+  // IMPORTANT FIX: allow start ALWAYS
   if (text.startsWith("/start")) return next();
 
   const joined = await isJoined(ctx);
-  if (!joined) return ctx.reply("⚠️ Join first", joinUI());
+
+  if (!joined) {
+    return ctx.reply(
+      "⚠️ Join required channels first 🚫",
+      joinUI()
+    );
+  }
 
   return next();
 });
@@ -112,6 +132,7 @@ bot.start(async (ctx) => {
 
   const joined = await isJoined(ctx);
 
+  // ❌ NOT JOINED
   if (!joined) {
     return ctx.reply(
       "⚠️ Please join required channels first 🚀",
@@ -119,25 +140,27 @@ bot.start(async (ctx) => {
     );
   }
 
+  // FIRST TIME USER
   if (!db.users[id]) {
     db.users[id] = { joined: true };
     saveDB(db);
 
     return ctx.reply(`🎉 Congratulations! 🎉
 
-🌸 Welcome to the Bot!
+🌸 Welcome to Bot!
 
 📌 You can use:
-🔹 /help
 🔹 /panel
+🔹 /help
 
 🇧🇩 বাংলা:
-কোনো সাহায্য লাগলে /help লিখুন
+যেকোনো সাহায্য লাগলে /help লিখুন
 
 🌐 Website:
 https://mdshahavuddinm904.github.io/Smart-Method-Owner/`);
   }
 
+  // RETURN USER
   return ctx.reply(`🌸 Bot Started Successfully 🚀
 
 👋 Welcome Back!
@@ -147,7 +170,7 @@ https://mdshahavuddinm904.github.io/Smart-Method-Owner/`);
 🔹 /help
 🔹 Support system active
 
-🌍 Website:
+🌐 Website:
 https://mdshahavuddinm904.github.io/Smart-Method-Owner/`);
 });
 
@@ -160,10 +183,21 @@ bot.action("check_join", async (ctx) => {
 
   if (!ok) return ctx.answerCbQuery("❌ Not joined", { show_alert: true });
 
-  return ctx.editMessageText(
-    "🌸 Bot Started Successfully 🚀\n\nPlease /start again"
-  );
+  return ctx.editMessageText(`🌸 Bot Started Successfully 🚀
+
+👉 Please /start again to unlock all features`);
 });
+
+/* =========================
+   PANEL (FIXED BUTTONS)
+========================= */
+
+bot.command("panel", (ctx) => {
+  ctx.reply("🍊 Orange Carrier Panel 🍊", panelUI());
+});
+
+bot.action("gmail", (ctx) => ctx.reply("📧 Gmail:\n\nmariyaakter1028@gmail.com"));
+bot.action("pass", (ctx) => ctx.reply("🔐 Password:\n\nOnetimeuse"));
 
 /* =========================
    HELP
@@ -173,35 +207,17 @@ bot.command("help", (ctx) => {
   ctx.reply(`📌 HELP MENU 📌
 
 🔹 /panel → Get Panel
-🔹 Support button below`, supportUI());
+🔹 Contact support below`);
 });
 
 /* =========================
-   SUPPORT SYSTEM
+   SUPPORT
 ========================= */
 
 bot.action("contact_support", (ctx) => {
   supportPending[ctx.from.id] = true;
   ctx.reply("📩 Write your message now");
 });
-
-/* =========================
-   PANEL
-========================= */
-
-bot.command("panel", (ctx) => {
-  ctx.reply("🍊 Orange Panel 🍊", {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "📧 Copy Gmail", callback_data: "gmail" }],
-        [{ text: "🔐 Copy Password", callback_data: "pass" }]
-      ]
-    }
-  });
-});
-
-bot.action("gmail", (ctx) => ctx.reply("📧 Gmail:\nmariyaakter1028@gmail.com"));
-bot.action("pass", (ctx) => ctx.reply("🔐 Password:\nOnetimeuse"));
 
 /* =========================
    ADMIN REPLY
@@ -239,7 +255,7 @@ bot.on("text", async (ctx) => {
 });
 
 /* =========================
-   RANDOM MESSAGE
+   RANDOM MESSAGE (FIXED BUTTONS)
 ========================= */
 
 const randomMessages = [
@@ -270,15 +286,17 @@ setInterval(async () => {
 
   const sent = await bot.telegram.sendMessage(
     GROUP_ID,
-    `📢 RANDOM SMS\n\n${msg}`
+    `📢 RANDOM SMS\n\n${msg}`,
+    randomButtons()
   );
 
   setTimeout(() => {
     bot.telegram.deleteMessage(GROUP_ID, sent.message_id).catch(() => {});
   }, 600000);
+
 }, 120000);
 
 /* ========================= */
 
 bot.launch();
-console.log("Bot running...");
+console.log("Bot Running...");
