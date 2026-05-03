@@ -20,7 +20,7 @@ const DB_FILE = "./db.json";
 const pendingReply = {};
 
 /* =========================
-   DATABASE (BAN SYSTEM)
+   DATABASE
 ========================= */
 
 function loadDB() {
@@ -73,35 +73,41 @@ function joinUI() {
 }
 
 /* =========================
-   START
+   🔥 GLOBAL ACCESS MIDDLEWARE
 ========================= */
 
-bot.start(async (ctx) => {
+async function checkAccess(ctx, next) {
   const ok = await isJoined(ctx);
 
   if (!ok) {
     return ctx.reply(
-      "⚠️ Access Denied 🚫\n\nYou must join all required channels before using this bot 📢\n\n👉 After joining, click the button below to verify your access 🔄\n\n🔥 Stay connected to unlock full features 🚀",
+      "⚠️ Access Denied 🚫\n\nYou must join all required channels before using this bot 📢\n\n👉 Click below button after joining 🔄\n\n🚀 Unlock full access after verification",
       joinUI()
     );
   }
 
-  ctx.reply(`🌸 Bot Started Successfully 🚀
+  return next();
+}
+
+/* =========================
+   APPLY MIDDLEWARE
+========================= */
+
+bot.use(checkAccess);
+
+/* =========================
+   START
+========================= */
+
+bot.start(async (ctx) => {
+  return ctx.reply(`🌸 Bot Started Successfully 🚀
 
 👋 Welcome!
 
 📌 You can use the following commands:
 
 🔹 /start → Start the bot
-🔹 /panel → View panel (Email/Password/Link)
-🔹 /help → Help menu (can be added later)
-
-⚠️ Note:
-❌ /block → Admin only
-❌ /unblock → Admin only
-❌ /boardchat → Admin only
-
-💡 If you face any issue, contact the admin
+🔹 /panel → View panel
 
 🚀 Enjoy using the bot`);
 });
@@ -115,25 +121,14 @@ bot.action("check_join", async (ctx) => {
 
   if (!ok) {
     return ctx.answerCbQuery(
-`❌ NOT JOINED ❌
-
-🚫 Access Blocked
-📢 Join Required Channels First`
+      "❌ NOT JOINED ❌\n\n📢 Join required channels first"
     );
   }
 
-  await ctx.editMessageText(`🎉✅ Verification Successful! 🚀
+  return ctx.editMessageText(`🎉 Verification Successful 🚀
 
-━━━━━━━━━━━━━━━
-🌸 Congratulations!
-You are now fully verified 💎
-
-⚡ You can now access all bot features
-📌 No restrictions applied
-🚀 Enjoy smooth system access
-
-━━━━━━━━━━━━━━━
-💡 Smart Method System Active`);
+🌸 You are now fully verified 💎
+🚀 All features unlocked`);
 });
 
 /* =========================
@@ -141,10 +136,7 @@ You are now fully verified 💎
 ========================= */
 
 bot.command("panel", (ctx) => {
-  ctx.reply(`🍊 Orange Carrier Panel 🍊
-━━━━━━━━━━━━━━━
-🔽 Click buttons below 🔽
-`, {
+  ctx.reply("🍊 Orange Carrier Panel 🍊", {
     reply_markup: {
       inline_keyboard: [
         [{ text: "📧 Copy Gmail", callback_data: "copy_email" }],
@@ -156,31 +148,12 @@ bot.command("panel", (ctx) => {
   });
 });
 
-/* =========================
-   COPY
-========================= */
-
 bot.action("copy_email", (ctx) => {
   ctx.answerCbQuery("📧 Copied: Mariyaakter1028@gmail.com");
 });
 
 bot.action("copy_pass", (ctx) => {
   ctx.answerCbQuery("🔐 Copied: Onetimeuse");
-});
-
-/* =========================
-   BOARDCHAT
-========================= */
-
-bot.command("boardchat", async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("🚫 ACCESS DENIED 🚫\n\nOnly ADMIN can use this command");
-
-  const msg = ctx.message.text.split(" ").slice(1).join(" ");
-  if (!msg) return ctx.reply("❌ /boardchat message");
-
-  await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
-  ctx.reply("✅ Sent to group");
 });
 
 /* =========================
@@ -192,8 +165,6 @@ bot.command("block", (ctx) => {
     return ctx.reply("🚫 ACCESS DENIED 🚫");
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ /block userID");
-
   const db = loadDB();
   db.banned.push(String(id));
   saveDB(db);
@@ -206,13 +177,26 @@ bot.command("unblock", (ctx) => {
     return ctx.reply("🚫 ACCESS DENIED 🚫");
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("❌ /unblock userID");
-
   const db = loadDB();
   db.banned = db.banned.filter(u => u !== String(id));
   saveDB(db);
 
   ctx.reply(`✅ Unblocked ${id}`);
+});
+
+/* =========================
+   BOARDCHAT
+========================= */
+
+bot.command("boardchat", async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID)
+    return ctx.reply("🚫 ACCESS DENIED 🚫");
+
+  const msg = ctx.message.text.split(" ").slice(1).join(" ");
+  if (!msg) return ctx.reply("❌ /boardchat message");
+
+  await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
+  ctx.reply("✅ Sent to group");
 });
 
 /* =========================
@@ -224,16 +208,15 @@ bot.on("text", async (ctx) => {
 
   if (isBanned(id)) return ctx.reply("⛔ You are blocked");
 
-  const ok = await isJoined(ctx);
-  if (!ok) return ctx.reply("⚠️ Join first", joinUI());
-
   const text = ctx.message.text;
 
   if (id === ADMIN_ID && pendingReply[ADMIN_ID]) {
     const userId = pendingReply[ADMIN_ID];
+
     await ctx.telegram.sendMessage(userId, `💬 Admin Reply:\n\n${text}`);
+
     pendingReply[ADMIN_ID] = null;
-    return ctx.reply("✅ Sent");
+    return ctx.reply("✅ Sent to user");
   }
 
   const user = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
@@ -254,7 +237,7 @@ bot.on("text", async (ctx) => {
 });
 
 /* =========================
-   RANDOM MESSAGE + AUTO DELETE
+   RANDOM SMS + BUTTONS
 ========================= */
 
 const randomMessages = [
@@ -262,20 +245,40 @@ const randomMessages = [
   "🚀 Keep grinding, don’t stop 🔥",
   "💡 Smart work always wins 🧠",
   "🌸 Stay positive, stay focused 😊",
-  "⚡ System is fully active now 🚀"
+  "⚡ System is active 🚀"
 ];
 
+function randomButtons() {
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" }],
+        [{ text: "⚙️ Method Channel", url: "https://t.me/Global_Method_Channel" }]
+      ]
+    }
+  };
+}
+
 setInterval(async () => {
-  const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+  try {
+    const msg =
+      randomMessages[Math.floor(Math.random() * randomMessages.length)];
 
-  const sent = await bot.telegram.sendMessage(GROUP_ID, msg);
+    const sent = await bot.telegram.sendMessage(
+      GROUP_ID,
+      `📢 RANDOM SMS\n\n${msg}`,
+      randomButtons()
+    );
 
-  setTimeout(async () => {
-    try {
-      await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
-    } catch {}
-  }, 600000);
+    setTimeout(async () => {
+      try {
+        await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
+      } catch {}
+    }, 600000);
 
+  } catch (e) {
+    console.log(e.message);
+  }
 }, 120000);
 
 /* ========================= */
