@@ -205,12 +205,19 @@ if (!adminOnly(ctx)) return;
 const db = loadDB();
 const users = Object.entries(db.users);
 
-let text = 👥 Total Users: ${users.length}\n\n;
-users.forEach((u, i) => {
-text += ${i + 1}. ${u[1].username} (${u[0]})\n;
-});
+bot.command("alluser", (ctx) => {
+  if (!adminOnly(ctx)) return;
 
-ctx.reply(text);
+  const db = loadDB();
+  const users = Object.entries(db.users);
+
+  let text = 👥 Total Users: ${users.length}\n\n;   ❌ এখানে ভুল
+
+  users.forEach((u, i) => {
+    text += ${i + 1}. ${u[1].username} (${u[0]})\n;
+  });
+
+  ctx.reply(text);
 });
 
 bot.on("text", async (ctx) => {
