@@ -19,7 +19,10 @@ const DB_FILE = "./db.json";
 
 function loadDB() {
   if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ banned: [], users: {} }, null, 2));
+    fs.writeFileSync(
+      DB_FILE,
+      JSON.stringify({ banned: [], users: {} }, null, 2)
+    );
   }
   return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
 }
@@ -50,12 +53,18 @@ function joinUI() {
     reply_markup: {
       inline_keyboard: [
         [
-          { text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" },
-          { text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }
+          {
+            text: "⚙️ Global Channel",
+            url: "https://t.me/Global_Method_Channel",
+          },
+          {
+            text: "📢 Main Channel",
+            url: "https://t.me/+75BQ2Qw9UZI4OTM1",
+          },
         ],
-        [{ text: "✅ Check Joined", callback_data: "check_join" }]
-      ]
-    }
+        [{ text: "✅ Check Joined", callback_data: "check_join" }],
+      ],
+    },
   };
 }
 
@@ -67,9 +76,9 @@ function supportUI() {
   return {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📩 Contact Support", callback_data: "contact_support" }]
-      ]
-    }
+        [{ text: "📩 Contact Support", callback_data: "contact_support" }],
+      ],
+    },
   };
 }
 
@@ -82,9 +91,9 @@ function randomButtons() {
     reply_markup: {
       inline_keyboard: [
         [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }],
-        [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }]
-      ]
-    }
+        [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
+      ],
+    },
   };
 }
 
@@ -111,11 +120,6 @@ bot.use(async (ctx, next) => {
     return ctx.reply("⛔ You are blocked.");
   }
 
-  // /start always allowed
-  if (ctx.message?.text?.startsWith("/start")) {
-    return next();
-  }
-
   // join check for all commands + messages
   const joined = await isJoined(ctx);
   if (!joined) {
@@ -129,7 +133,7 @@ bot.use(async (ctx, next) => {
 });
 
 /* =========================
-   START COMMAND
+   START COMMAND (FIXED)
 ========================= */
 
 bot.start(async (ctx) => {
@@ -143,35 +147,39 @@ bot.start(async (ctx) => {
 
   const joined = await isJoined(ctx);
 
+  // Join না থাকলে join msg দিবে
   if (!joined) {
     return ctx.reply(
-      "⚠️ Please join required channels first 🚀\n\n📢 Join then click Check Joined ✅",
+      `⚠️ Access Denied 🚫
+
+You must join required channels before using this bot 📢
+
+✅ Join now and click "Check Joined"
+
+🔥 After verification, type /start again`,
       joinUI()
     );
   }
 
-  // joined but first time start after join
-  if (db.users[userId].joined === true) {
-    return ctx.reply(`🎉 Congratulations! 🎉
+  // Join থাকলে welcome msg দিবে
+  return ctx.reply(`🌸 Bot Started Successfully 🚀
 
-✅ আপনি এখন বটটি ব্যবহার করতে পারবেন!
+🎉 Welcome ${ctx.from.first_name}!
 
-📌 যদি কোনো সাহায্য প্রয়োজন হয় তাহলে /help command send করুন
+📌 In this bot you will get:
 
-🔹 /panel → To get Orange Carrier Panel Access 🚀`);
-  }
+✅ Free Panel Access
+✅ Admin Support System
+✅ Auto Random Updates
+✅ Secure Verified System
 
-  // if joined but not verified yet
-  db.users[userId].joined = true;
-  saveDB(db);
+━━━━━━━━━━━━━━━
+📍 Commands:
 
-  return ctx.reply(`🎉 Congratulations! 🎉
+🔹 /panel → Get Orange Carrier Panel Access
+🔹 /help → Support & Help Menu
 
-✅ আপনি এখন বটটি ব্যবহার করতে পারবেন!
-
-📌 যদি কোনো সাহায্য প্রয়োজন হয় তাহলে /help command send করুন
-
-🔹 /panel → To get Orange Carrier Panel Access 🚀`);
+⚡ Smart Method System Active 🚀`);
 });
 
 /* =========================
@@ -195,12 +203,15 @@ bot.action("check_join", async (ctx) => {
 ========================= */
 
 bot.command("help", (ctx) => {
-  ctx.reply(`📌 HELP MENU 📌
+  ctx.reply(
+    `📌 HELP MENU 📌
 
 🔹 Free Panel লাগলে /panel command send করুন
 🔹 Support লাগলে নিচের বাটনে ক্লিক করুন
 
-⚡ Smart Method System Active 🚀`, supportUI());
+⚡ Smart Method System Active 🚀`,
+    supportUI()
+  );
 });
 
 /* =========================
@@ -213,8 +224,8 @@ bot.action("contact_support", async (ctx) => {
 
   return ctx.reply(`📩 Support System Activated!
 
-✍️ এখন আপনার মেসেজ লিখুন
-আপনার মেসেজ Admin এর কাছে চলে যাবে ✅`);
+✍️ Now write your message.
+Your message will be sent to the Admin ✅`);
 });
 
 /* =========================
@@ -228,9 +239,9 @@ bot.command("panel", (ctx) => {
         [{ text: "📧 Copy Gmail", callback_data: "send_email" }],
         [{ text: "🔐 Copy Password", callback_data: "send_pass" }],
         [{ text: "🌐 Open Panel", url: "https://www.orangecarrier.com" }],
-        [{ text: "👤 Support", url: "https://t.me/Smart_Method_Owner" }]
-      ]
-    }
+        [{ text: "👤 Support", url: "https://t.me/Smart_Method_Owner" }],
+      ],
+    },
   });
 });
 
@@ -312,7 +323,6 @@ bot.action(/reply_(\d+)/, async (ctx) => {
 ========================= */
 
 bot.on("text", async (ctx) => {
-  const db = loadDB();
   const id = ctx.from.id;
   const text = ctx.message.text;
 
@@ -341,10 +351,8 @@ bot.on("text", async (ctx) => {
       `📩 SUPPORT MESSAGE\n\n👤 ${user}\n🆔 ${id}\n\n💬 ${text}`,
       {
         reply_markup: {
-          inline_keyboard: [
-            [{ text: "💬 Reply", callback_data: `reply_${id}` }]
-          ]
-        }
+          inline_keyboard: [[{ text: "💬 Reply", callback_data: `reply_${id}` }]],
+        },
       }
     );
 
@@ -376,12 +384,13 @@ const randomMessages = [
   "📌 Stay consistent, stay unstoppable 🚀",
   "✨ Your future is loading... keep going 💎",
   "🌍 Success is a journey not destination 🚀",
-  "📊 Focus + Discipline = Money 💰"
+  "📊 Focus + Discipline = Money 💰",
 ];
 
 setInterval(async () => {
   try {
-    const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+    const msg =
+      randomMessages[Math.floor(Math.random() * randomMessages.length)];
 
     const sent = await bot.telegram.sendMessage(
       GROUP_ID,
@@ -392,8 +401,7 @@ setInterval(async () => {
     // Auto delete after 10 minutes
     setTimeout(() => {
       bot.telegram.deleteMessage(GROUP_ID, sent.message_id).catch(() => {});
-    }, 420000);
-
+    }, 600000);
   } catch {}
 }, 120000);
 
