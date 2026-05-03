@@ -24,195 +24,20 @@ function saveDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-/* ================= RANDOM CONTROL ================= */
+/* ================= RANDOM SYSTEM ON/OFF ================= */
 
-let randomOn = true;
-
-/* ================= JOIN CHECK ================= */
-
-async function isJoined(ctx) {
-  try {
-    const res = await ctx.telegram.getChatMember(METHOD_CHANNEL, ctx.from.id);
-    return ["member", "administrator", "creator"].includes(res.status);
-  } catch {
-    return false;
-  }
-}
-
-/* ================= UI ================= */
-
-function joinUI() {
-  return {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
-        [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }],
-        [{ text: "✅ Joined", callback_data: "check_join" }]
-      ]
-    }
-  };
-}
-
-const START_MSG = `🌸 Bot Started Successfully 🚀
-
-👋 Welcome!
-
-📌 You can use the following commands:
-
-🔹 /start → Start the bot
-🔹 /panel → View panel
-🔹 /help → Help menu
-
-🚀 Enjoy using the bot`;
-
-/* ================= STATES ================= */
-
-const supportState = {};
-const adminReply = {};
-const boardchatState = {};
-
-/* ================= MIDDLEWARE ================= */
-
-bot.use(async (ctx, next) => {
-  if (!ctx.from) return;
-
-  const id = ctx.from.id;
-  const text = ctx.message?.text;
-
-  if (id === ADMIN_ID) return next();
-  if (text?.startsWith("/start")) return next();
-
-  const db = loadDB();
-  if (db.banned.includes(String(id))) {
-    return ctx.reply("⛔ You are blocked");
-  }
-
-  const joined = await isJoined(ctx);
-  if (!joined) {
-    return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
-  }
-
-  return next();
-});
-
-/* ================= START ================= */
-
-bot.start(async (ctx) => {
-  const joined = await isJoined(ctx);
-  if (!joined) return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
-
-  const db = loadDB();
-  const id = String(ctx.from.id);
-
-  if (!db.users[id]) {
-    db.users[id] = { username: ctx.from.username || "NoUsername" };
-    saveDB(db);
-  }
-
-  return ctx.reply(START_MSG);
-});
-
-bot.action("check_join", async (ctx) => {
-  const ok = await isJoined(ctx);
-  if (!ok) return ctx.answerCbQuery("❌ Not Joined", { show_alert: true });
-
-  return ctx.editMessageText(START_MSG);
-});
-
-/* ================= HELP ================= */
-
-bot.command("help", (ctx) => {
-  ctx.reply(`📌 HELP MENU
-
-🔹 /panel → Get Panel Access
-🔹 Support System Available
-
-🇧🇩 সাহায্যের জন্য নিচের বাটন ব্যবহার করুন`, {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "🆘 Support", callback_data: "support_msg" }]
-      ]
-    }
-  });
-});
-
-bot.action("support_msg", (ctx) => {
-  supportState[ctx.from.id] = true;
-  ctx.reply("✍️ Write your message. It will be sent to admin 📩");
-});
-
-/* ================= PANEL ================= */
-
-bot.command("panel", (ctx) => {
-  return ctx.reply("🍊 ORANGE PANEL ACCESS 🍊", {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "📧 Gmail", callback_data: "gmail" }],
-        [{ text: "🔐 Password", callback_data: "pass" }],
-        [{ text: "🌐 Login Panel", url: "https://www.orangecarrier.com/" }],
-        [{ text: "👤 Support ID", url: "https://t.me/Smart_Method_Owner" }]
-      ]
-    }
-  });
-});
-
-bot.action("gmail", (ctx) => ctx.reply("📧 Gmail: Mariyaakter1028@gmail.com"));
-bot.action("pass", (ctx) => ctx.reply("🔐 Password: Onetimeuse"));
-
-/* ================= ADMIN CHECK ================= */
-
-function adminOnly(ctx) {
-  if (ctx.from.id !== ADMIN_ID) {
-    ctx.reply("🚫 This command is only for admin");
-    return false;
-  }
-  return true;
-}
-
-/* ================= BLOCK ================= */
-
-bot.command("block", (ctx) => {
-  if (!adminOnly(ctx)) return;
-
-  const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("⚠️ Provide user ID");
-
-  const db = loadDB();
-  db.banned.push(String(id));
-  saveDB(db);
-
-  ctx.reply("✅ Block successful");
-});
-
-/* ================= UNBLOCK ================= */
-
-bot.command("unblock", (ctx) => {
-  if (!adminOnly(ctx)) return;
-
-  const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("⚠️ Provide user ID");
-
-  const db = loadDB();
-  db.banned = db.banned.filter(u => u !== String(id));
-  saveDB(db);
-
-  ctx.reply("✅ Unblock successful");
-});
-
-/* ================= RANDOM ON/OFF ================= */
+let randomStatus = true; // default ON
 
 bot.command("randomon", (ctx) => {
-  if (!adminOnly(ctx)) return;
-
-  randomOn = true;
-  ctx.reply("🤖 Random message system ON");
+  if (ctx.from.id !== ADMIN_ID) return ctx.reply("🚫 Admin only");
+  randomStatus = true;
+  ctx.reply("✅ Random Message ON");
 });
 
 bot.command("randomoff", (ctx) => {
-  if (!adminOnly(ctx)) return;
-
-  randomOn = false;
-  ctx.reply("🤖 Random message system OFF");
+  if (ctx.from.id !== ADMIN_ID) return ctx.reply("🚫 Admin only");
+  randomStatus = false;
+  ctx.reply("⛔ Random Message OFF");
 });
 
 /* ================= RANDOM MESSAGES ================= */
@@ -244,21 +69,26 @@ function getRandomMsg() {
   return randomMessages[Math.floor(Math.random() * randomMessages.length)];
 }
 
-/* ================= RANDOM SYSTEM ================= */
+/* ================= AUTO MESSAGE (UPDATED WITH ON/OFF) ================= */
 
 setInterval(async () => {
-  if (!randomOn) return;
+  if (!randomStatus) return; // 🔥 ON/OFF control
 
   try {
-    const sent = await bot.telegram.sendMessage(GROUP_ID, `📢 ${getRandomMsg()}`, {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
-          [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }]
-        ]
+    const sent = await bot.telegram.sendMessage(
+      GROUP_ID,
+      `📢 ${getRandomMsg()}`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
+            [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }]
+          ]
+        }
       }
-    });
+    );
 
+    // 4 minute delete
     setTimeout(async () => {
       try {
         await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
@@ -268,7 +98,7 @@ setInterval(async () => {
   } catch {}
 }, 2 * 60 * 1000);
 
-/* ================= START BOT ================= */
+/* ================= BOT START ================= */
 
 bot.launch();
 console.log("✅ BOT RUNNING");
