@@ -67,26 +67,21 @@ bot.use(async (ctx, next) => {
   if (!ctx.from) return next();
   const userId = ctx.from.id;
 
-  // Admin এর জন্য কোনো চেক নেই
   if (userId === ADMIN_ID) return next();
+  if (isBanned(userId)) return ctx.reply("⛔ You are blocked.");
 
-  if (isBanned(userId)) {
-    return ctx.reply("⛔ You are blocked.");
-  }
+  if (ctx.message?.text?.startsWith("/start")) return next();
 
   const joined = await isJoined(ctx);
   if (!joined) {
-    // শুধু /start ছাড়া সব কমান্ডে জয়েন করতে বলবে
-    if (ctx.message?.text?.startsWith('/start')) return next();
-    
-    return ctx.reply("⚠️ You must join our channel first to use commands!", joinUI());
+    return ctx.reply("⚠️ You must join our channel first!", joinUI());
   }
 
   return next();
 });
 
 /* =========================
-   START
+   START COMMAND
 ========================= */
 
 bot.start(async (ctx) => {
@@ -95,20 +90,19 @@ bot.start(async (ctx) => {
 
   if (!db.users[userId]) db.users[userId] = { joined: false };
 
-  const isUserJoined = await isJoined(ctx);
+  const joined = await isJoined(ctx);
 
-  if (!isUserJoined) {
-    return ctx.reply("⚠️ Please join the required channels first!", joinUI());
+  if (!joined) {
+    return ctx.reply("⚠️ Please join the required channels to use the bot.", joinUI());
   }
 
   if (!db.users[userId].joined) {
     db.users[userId].joined = true;
     saveDB(db);
-
-    return ctx.reply(`🎉 **Congratulations!**\n\n🌸 You are now verified!\n🚀 Use /panel and /help`);
+    return ctx.reply(`🎉 **Congratulations!**\n\n🌸 You are now verified!\n\nUse /panel and /help`);
   }
 
-  ctx.reply(`🌸 Welcome back!\n\nUse /panel or /help`);
+  ctx.reply(`🌸 Welcome back!\n\n📌 Available: /panel | /help`);
 });
 
 /* =========================
@@ -124,7 +118,7 @@ bot.action("check_join", async (ctx) => {
   db.users[userId] = { joined: true };
   saveDB(db);
 
-  await ctx.editMessageText(`✅ Successfully Joined!\n\nNow type /start again.`);
+  await ctx.editMessageText(`✅ Joined Successfully!\n\nPlease type /start again.`);
 });
 
 /* =========================
@@ -152,38 +146,37 @@ bot.command("panel", (ctx) => {
    ADMIN COMMANDS
 ========================= */
 
-bot.command(["block", "unblock", "boardchat"], (ctx) => {
+const adminOnly = (ctx) => {
   if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply("❌ This command is only for Admin.");
+    ctx.reply("❌ This command is only for Admin.");
+    return false;
   }
+  return true;
+};
 
-  const command = ctx.message.text.split(" ")[0];
+bot.command("block", (ctx) => { if (!adminOnly(ctx)) return;
+  const id = ctx.message.text.split(" ")[1];
+  if (!id) return ctx.reply("Usage: /block <user_id>");
+  const db = loadDB();
+  if (!db.banned.includes(id)) db.banned.push(id);
+  saveDB(db);
+  ctx.reply(`⛔ User ${id} blocked.`);
+});
 
-  if (command === "/block") {
-    const id = ctx.message.text.split(" ")[1];
-    if (!id) return ctx.reply("Usage: /block <user_id>");
-    
-    const db = loadDB();
-    if (!db.banned.includes(id)) db.banned.push(id);
-    saveDB(db);
-    ctx.reply(`⛔ User ${id} has been blocked.`);
-  } 
-  else if (command === "/unblock") {
-    const id = ctx.message.text.split(" ")[1];
-    if (!id) return ctx.reply("Usage: /unblock <user_id>");
-    
-    const db = loadDB();
-    db.banned = db.banned.filter(u => u !== id);
-    saveDB(db);
-    ctx.reply(`✅ User ${id} has been unblocked.`);
-  } 
-  else if (command === "/boardchat") {
-    const msg = ctx.message.text.split(" ").slice(1).join(" ");
-    if (!msg) return ctx.reply("Usage: /boardchat <message>");
-    
-    bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
-    ctx.reply("✅ Message sent to group.");
-  }
+bot.command("unblock", (ctx) => { if (!adminOnly(ctx)) return;
+  const id = ctx.message.text.split(" ")[1];
+  if (!id) return ctx.reply("Usage: /unblock <user_id>");
+  const db = loadDB();
+  db.banned = db.banned.filter(u => u !== id);
+  saveDB(db);
+  ctx.reply(`✅ User ${id} unblocked.`);
+});
+
+bot.command("boardchat", (ctx) => { if (!adminOnly(ctx)) return;
+  const msg = ctx.message.text.split(" ").slice(1).join(" ");
+  if (!msg) return ctx.reply("Usage: /boardchat <message>");
+  bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
+  ctx.reply("✅ Sent.");
 });
 
 /* =========================
@@ -201,26 +194,66 @@ bot.action("send_pass", async (ctx) => {
 });
 
 /* =========================
-   RANDOM MESSAGE (7 মিনিট)
+   RANDOM MESSAGE (20 টি মেসেজ + বাটন)
 ========================= */
 
 const randomMessages = [
-  "🌟 Stay strong 💪", "🚀 Keep grinding 🔥", "💡 Smart work wins 🧠",
-  "🌸 Stay positive 😊", "⚡ System is active"
+  "🌟 Stay strong, success is near 💪",
+  "🚀 Keep grinding, results are coming 🔥",
+  "💡 Smart work always beats hard work 🧠",
+  "🌸 Stay positive and focused 😊",
+  "⚡ The system is working for you",
+  "📈 Small daily improvements lead to big success",
+  "💎 Consistency is the key to success",
+  "🔥 Never quit, just upgrade your strategy",
+  "🌍 You are connected with global opportunities",
+  "🧠 Upgrade your mindset every single day",
+  "🏆 Winners never quit, quitters never win",
+  "⏳ Time + Patience = Big Results",
+  "🚀 Take action today, thank yourself tomorrow",
+  "💰 Focus on value, money will follow",
+  "🌟 Your future self is watching you",
+  "🔋 Energy flows where focus goes",
+  "📊 Progress is better than perfection",
+  "🛡️ Discipline beats motivation",
+  "🎯 Stay focused on your goals",
+  "💪 Every champion was once a beginner"
 ];
+
+function randomButtons() {
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" },
+          { text: "⚙️ Method Channel", url: "https://t.me/Global_Method_Channel" }
+        ]
+      ]
+    }
+  };
+}
 
 setInterval(async () => {
   try {
     const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
-    const sent = await bot.telegram.sendMessage(GROUP_ID, `📢 RANDOM SMS\n\n${msg}`);
 
+    const sent = await bot.telegram.sendMessage(
+      GROUP_ID,
+      `📢 RANDOM SMS\n\n${msg}`,
+      randomButtons()
+    );
+
+    // ৭ মিনিট পর ডিলিট
     setTimeout(() => {
       bot.telegram.deleteMessage(GROUP_ID, sent.message_id).catch(() => {});
-    }, 420000); // 7 minutes
-  } catch {}
+    }, 420000);
+
+  } catch (e) {
+    console.log("Random message error:", e.message);
+  }
 }, 120000);
 
 /* ========================= */
 
 bot.launch();
-console.log("✅ Bot running...");
+console.log("✅ Bot running successfully...");
