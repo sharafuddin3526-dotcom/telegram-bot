@@ -59,16 +59,12 @@ const START_MSG = `🌸 Bot Started Successfully 🚀
 🔹 /panel → View panel
 🔹 /help → Help menu
 
-⚠️ Admin Commands:
-❌ /block
-❌ /unblock
-❌ /boardchat
-❌ /alluser
-
 🚀 Enjoy using the bot`;
 
 /* ================= STATES ================= */
 
+const supportState = {};
+const adminReply = {};
 const boardchatState = {};
 
 /* ================= MIDDLEWARE ================= */
@@ -79,16 +75,20 @@ bot.use(async (ctx, next) => {
   const id = ctx.from.id;
   const text = ctx.message?.text;
 
-  if (id === ADMIN_ID || text?.startsWith("/start")) return next();
+  // Admin bypass
+  if (id === ADMIN_ID) return next();
+
+  // Allow /start but enforce join inside handler
+  if (text?.startsWith("/start")) return next();
 
   const db = loadDB();
   if (db.banned.includes(String(id))) {
-    return ctx.reply("⛔ You are blocked");
+    return ctx.reply("⛔ You are blocked from using this bot");
   }
 
   const joined = await isJoined(ctx);
   if (!joined) {
-    return ctx.reply("⚠️ Join channels first", joinUI());
+    return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
   }
 
   return next();
@@ -97,6 +97,11 @@ bot.use(async (ctx, next) => {
 /* ================= START ================= */
 
 bot.start(async (ctx) => {
+  const joined = await isJoined(ctx);
+  if (!joined) {
+    return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
+  }
+
   const db = loadDB();
   const id = String(ctx.from.id);
 
@@ -110,7 +115,16 @@ bot.start(async (ctx) => {
   return ctx.reply(START_MSG);
 });
 
-/* ================= HELP ================= */
+/* ================= JOIN BUTTON ================= */
+
+bot.action("check_join", async (ctx) => {
+  const ok = await isJoined(ctx);
+  if (!ok) return ctx.answerCbQuery("❌ Not Joined", { show_alert: true });
+
+  return ctx.editMessageText(START_MSG);
+});
+
+/* ================= HELP + SUPPORT ================= */
 
 bot.command("help", (ctx) => {
   ctx.reply(`📌 HELP MENU
@@ -121,10 +135,15 @@ bot.command("help", (ctx) => {
 🇧🇩 সাহায্যের জন্য নিচের বাটন ব্যবহার করুন`, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "🆘 Support", url: "https://t.me/Smart_Method_Owner" }]
+        [{ text: "🆘 Support", callback_data: "support_msg" }]
       ]
     }
   });
+});
+
+bot.action("support_msg", (ctx) => {
+  supportState[ctx.from.id] = true;
+  ctx.reply("✍️ Write your message. It will be sent to admin 📩");
 });
 
 /* ================= PANEL ================= */
@@ -150,16 +169,26 @@ bot.action("pass", (ctx) => {
   ctx.reply("🔐 Password: Onetimeuse");
 });
 
+/* ================= ADMIN COMMAND GUARD ================= */
+
+function adminOnly(ctx) {
+  if (ctx.from.id !== ADMIN_ID) {
+    ctx.reply("🚫 This command is only available for admin users.");
+    return false;
+  }
+  return true;
+}
+
 /* ================= BLOCK ================= */
 
 bot.command("block", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+  if (!adminOnly(ctx)) return;
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("⚠️ Give user ID");
+  if (!id) return ctx.reply("⚠️ Please provide a user ID");
 
   const db = loadDB();
-  db.banned.push(String(id));
+  if (!db.banned.includes(String(id))) db.banned.push(String(id));
   saveDB(db);
 
   ctx.reply("✅ Block successful");
@@ -168,10 +197,10 @@ bot.command("block", (ctx) => {
 /* ================= UNBLOCK ================= */
 
 bot.command("unblock", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+  if (!adminOnly(ctx)) return;
 
   const id = ctx.message.text.split(" ")[1];
-  if (!id) return ctx.reply("⚠️ Give user ID");
+  if (!id) return ctx.reply("⚠️ Please provide a user ID");
 
   const db = loadDB();
   db.banned = db.banned.filter(u => u !== String(id));
@@ -183,39 +212,16 @@ bot.command("unblock", (ctx) => {
 /* ================= BOARDCHAT ================= */
 
 bot.command("boardchat", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+  if (!adminOnly(ctx)) return;
 
   boardchatState[ADMIN_ID] = true;
   ctx.reply("👉 Please write what you want to send");
 });
 
-bot.on("text", async (ctx) => {
-  const id = ctx.from.id;
-
-  if (boardchatState[ADMIN_ID] && id === ADMIN_ID) {
-    const msg = ctx.message.text;
-    boardchatState[ADMIN_ID] = false;
-
-    const db = loadDB();
-
-    // group
-    await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
-
-    // users
-    for (let userId of Object.keys(db.users)) {
-      try {
-        await bot.telegram.sendMessage(userId, `📢 ${msg}`);
-      } catch {}
-    }
-
-    return ctx.reply("📩 Message sent to group & users successfully");
-  }
-});
-
 /* ================= ALL USER ================= */
 
 bot.command("alluser", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+  if (!adminOnly(ctx)) return;
 
   const db = loadDB();
   const users = Object.entries(db.users);
@@ -227,6 +233,72 @@ bot.command("alluser", (ctx) => {
   });
 
   ctx.reply(text);
+});
+
+/* ================= TEXT HANDLER ================= */
+
+bot.on("text", async (ctx) => {
+  const id = ctx.from.id;
+  const text = ctx.message.text;
+
+  // BOARDCHAT
+  if (boardchatState[ADMIN_ID] && id === ADMIN_ID) {
+    boardchatState[ADMIN_ID] = false;
+
+    const db = loadDB();
+
+    await bot.telegram.sendMessage(GROUP_ID, `📢 ${text}`);
+
+    for (let uid of Object.keys(db.users)) {
+      try {
+        await bot.telegram.sendMessage(uid, `📢 ${text}`);
+      } catch {}
+    }
+
+    return ctx.reply("📩 Message sent to group & users successfully");
+  }
+
+  // ADMIN REPLY
+  if (id === ADMIN_ID && adminReply[ADMIN_ID]) {
+    const target = adminReply[ADMIN_ID];
+    adminReply[ADMIN_ID] = null;
+
+    await ctx.telegram.sendMessage(target, `💬 Admin Reply:\n\n${text}`);
+    return ctx.reply("📩 Your message sent successfully");
+  }
+
+  // USER SUPPORT MESSAGE
+  if (supportState[id]) {
+    supportState[id] = false;
+
+    await ctx.telegram.sendMessage(
+      ADMIN_ID,
+      `📩 USER MESSAGE
+
+👤 ${ctx.from.first_name}
+🆔 ${id}
+
+💬 ${text}`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "💬 Reply", callback_data: `reply_${id}` }]
+          ]
+        }
+      }
+    );
+
+    return ctx.reply("📩 Your message sent successfully");
+  }
+});
+
+/* ================= ADMIN REPLY BUTTON ================= */
+
+bot.action(/reply_(\d+)/, (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) return;
+
+  adminReply[ADMIN_ID] = ctx.match[1];
+  ctx.reply("✍️ Write your message. It will be sent to admin 📩");
 });
 
 /* ================= BOT START ================= */
