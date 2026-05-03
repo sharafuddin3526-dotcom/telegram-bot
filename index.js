@@ -112,12 +112,16 @@ bot.start(async (ctx) => {
 bot.action("check_join", async (ctx) => {
   const ok = await isJoined(ctx);
 
-  if (!ok) return ctx.answerCbQuery("❌ 𝗡𝗢𝗧 𝗝𝗢𝗜𝗡𝗘𝗗 ❌
+  if (!ok) {
+  return ctx.answerCbQuery(
+`❌ NOT JOINED ❌
 
 🚫 Access Blocked
-📢 Join Required Channels First");
+📢 Join Required Channels First`
+  );
+}
 
-  await ctx.editMessageText("🎉✅ Verification Successful! 🚀
+await ctx.editMessageText(`🎉✅ Verification Successful! 🚀
 
 ━━━━━━━━━━━━━━━
 🌸 Congratulations!
@@ -128,8 +132,7 @@ You are now fully verified 💎
 🚀 Enjoy smooth system access
 
 ━━━━━━━━━━━━━━━
-💡 Smart Method System Active");
-});
+💡 Smart Method System Active`);
 
 /* =========================
    PANEL COMMAND
