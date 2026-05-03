@@ -148,8 +148,8 @@ bot.action("support_msg", (ctx) => {
 
 /* ================= PANEL ================= */
 
-bot.command("ORANGE PANEL ACCESS", (ctx) => {
-  ctx.reply("📊 Panel:", {
+bot.command("PANEL", (ctx) => {
+  ctx.reply("📊:🍊 ORANGE PANEL ACCESS 🍊:", {
     reply_markup: {
       inline_keyboard: [
         [{ text: "📧 Gmail", callback_data: "gmail" }],
