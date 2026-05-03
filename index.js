@@ -10,6 +10,7 @@ const ADMIN_ID = 8136997138;
 const METHOD_CHANNEL = "@Global_Method_Channel";
 const GROUP_ID = "-1003527248014";
 const DB_FILE = "./db.json";
+let randomOn = true;
 
 /* ================= DB ================= */
 
@@ -165,7 +166,19 @@ return false;
 }
 return true;
 }
+bot.command("randomon", (ctx) => {
+  if (!adminOnly(ctx)) return;
 
+  randomOn = true;
+  ctx.reply("✅ Random Message System ON");
+});
+
+bot.command("randomoff", (ctx) => {
+  if (!adminOnly(ctx)) return;
+
+  randomOn = false;
+  ctx.reply("⛔ Random Message System OFF");
+});
 bot.command("block", (ctx) => {
 if (!adminOnly(ctx)) return;
 
@@ -283,6 +296,8 @@ return randomMessages[Math.floor(Math.random() * randomMessages.length)];
 }
 
 setInterval(async () => {
+  if (!randomOn) return;
+
   try {
     const sent = await bot.telegram.sendMessage(
       GROUP_ID,
