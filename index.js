@@ -199,27 +199,6 @@ boardchatState[ADMIN_ID] = true;
 ctx.reply("👉 Write your message");
 });
 
-bot.command("alluser", (ctx) => {
-if (!adminOnly(ctx)) return;
-
-const db = loadDB();
-const users = Object.entries(db.users);
-
-bot.command("alluser", (ctx) => {
-  if (!adminOnly(ctx)) return;
-
-  const db = loadDB();
-  const users = Object.entries(db.users);
-
-  let text = 👥 Total Users: ${users.length}\n\n;   ❌ এখানে ভুল
-
-  users.forEach((u, i) => {
-    text += ${i + 1}. ${u[1].username} (${u[0]})\n;
-  });
-
-  ctx.reply(text);
-});
-
 bot.on("text", async (ctx) => {
 const id = ctx.from.id;
 const text = ctx.message.text;
