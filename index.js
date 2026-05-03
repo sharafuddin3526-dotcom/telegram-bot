@@ -80,10 +80,30 @@ bot.start(async (ctx) => {
   const ok = await isJoined(ctx);
 
   if (!ok) {
-    return ctx.reply("⚠️ Please join required channels first 🚀", joinUI());
+    return ctx.reply("⚠️ Access Denied 🚫\n\n" +
+  "You must join all required channels before using this bot 📢\n\n" +
+  "👉 After joining, click the button below to verify your access 🔄\n\n" +
+  "🔥 Stay connected to unlock full features 🚀", joinUI());
   }
 
-  ctx.reply("🌸 Bot started. Use /panel 🚀");
+  ctx.reply("🌸 Bot Started Successfully 🚀
+
+👋 Welcome!
+
+📌 You can use the following commands:
+
+🔹 /start → Start the bot
+🔹 /panel → View panel (Email/Password/Link)
+🔹 /help → Help menu (can be added later)
+
+⚠️ Note:
+❌ /block → Admin only
+❌ /unblock → Admin only
+❌ /boardchat → Admin only
+
+💡 If you face any issue, contact the admin
+
+🚀 Enjoy using the bot");
 });
 
 /* =========================
@@ -93,13 +113,27 @@ bot.start(async (ctx) => {
 bot.action("check_join", async (ctx) => {
   const ok = await isJoined(ctx);
 
-  if (!ok) return ctx.answerCbQuery("❌ Not joined yet");
+  if (!ok) return ctx.answerCbQuery("❌ 𝗡𝗢𝗧 𝗝𝗢𝗜𝗡𝗘𝗗 ❌
 
-  await ctx.editMessageText("✅ Verified! You can use the bot 🚀");
+🚫 Access Blocked
+📢 Join Required Channels First");
+
+  await ctx.editMessageText("🎉✅ Verification Successful! 🚀
+
+━━━━━━━━━━━━━━━
+🌸 Congratulations!
+You are now fully verified 💎
+
+⚡ You can now access all bot features
+📌 No restrictions applied
+🚀 Enjoy smooth system access
+
+━━━━━━━━━━━━━━━
+💡 Smart Method System Active");
 });
 
 /* =========================
-   PANEL COMMAND (BUTTON SYSTEM)
+   PANEL COMMAND
 ========================= */
 
 bot.command("panel", (ctx) => {
@@ -127,7 +161,7 @@ bot.command("panel", (ctx) => {
 });
 
 /* =========================
-   COPY BUTTON ACTIONS
+   COPY BUTTONS
 ========================= */
 
 bot.action("copy_email", (ctx) => {
@@ -144,13 +178,22 @@ bot.action("copy_pass", (ctx) => {
 
 bot.command("boardchat", async (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("❌ Admin only");
+    return ctx.reply("🚫 ACCESS DENIED 🚫
+
+⚠️ This command is restricted!
+
+👮‍♂️ Only ADMIN has permission to use this feature.
+
+🔒 You do not have the required access level.
+
+━━━━━━━━━━━━━━━
+💡 If you think this is a mistake, contact support");
 
   const msg = ctx.message.text.split(" ").slice(1).join(" ");
   if (!msg) return ctx.reply("❌ /boardchat message");
 
   await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
-  ctx.reply("✅ Sent to group");
+  ctx.reply("✅ Message successfully sent to group 🚀");
 });
 
 /* =========================
@@ -159,7 +202,16 @@ bot.command("boardchat", async (ctx) => {
 
 bot.command("block", (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("❌ Admin only");
+    return ctx.reply("🚫 ACCESS DENIED 🚫
+
+⚠️ This command is restricted!
+
+👮‍♂️ Only ADMIN has permission to use this feature.
+
+🔒 You do not have the required access level.
+
+━━━━━━━━━━━━━━━
+💡 If you think this is a mistake, contact support");
 
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("❌ /block userID");
@@ -177,7 +229,16 @@ bot.command("block", (ctx) => {
 
 bot.command("unblock", (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("❌ Admin only");
+    return ctx.reply("🚫 ACCESS DENIED 🚫
+
+⚠️ This command is restricted!
+
+👮‍♂️ Only ADMIN has permission to use this feature.
+
+🔒 You do not have the required access level.
+
+━━━━━━━━━━━━━━━
+💡 If you think this is a mistake, contact support");
 
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("❌ /unblock userID");
@@ -190,17 +251,26 @@ bot.command("unblock", (ctx) => {
 });
 
 /* =========================
-   REPLY BUTTON
+   REPLY SYSTEM
 ========================= */
 
 bot.action(/reply_(\d+)/, async (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.answerCbQuery("❌ Not allowed");
+    return ctx.answerCbQuery("🚫 ACCESS DENIED 🚫
+
+⚠️ This command is restricted!
+
+👮‍♂️ Only ADMIN has permission to use this feature.
+
+🔒 You do not have the required access level.
+
+━━━━━━━━━━━━━━━
+💡 If you think this is a mistake, contact support");
 
   const userId = ctx.match[1];
   pendingReply[ADMIN_ID] = userId;
 
-  ctx.reply("✍️ এখন reply লিখো...");
+  ctx.reply("✍️ You are now replying to this user. Type your message...");
 });
 
 /* =========================
@@ -211,19 +281,19 @@ bot.on("text", async (ctx) => {
   const text = ctx.message.text;
   const id = ctx.from.id;
 
-  if (isBanned(id)) return ctx.reply("⛔ Banned user");
+  if (isBanned(id)) return ctx.reply("⛔ Access denied. You are blocked by @Smart_Method_Owner");
 
   const ok = await isJoined(ctx);
   if (!ok) return ctx.reply("⚠️ Join first", joinUI());
 
-  /* ADMIN REPLY MODE */
+  /* ADMIN REPLY */
   if (id === ADMIN_ID && pendingReply[ADMIN_ID]) {
     const userId = pendingReply[ADMIN_ID];
 
-    await ctx.telegram.sendMessage(userId, `💬 Admin Reply:\n\n${text}`);
+    await ctx.telegram.sendMessage(userId, `💬 You received a reply from Admin:\n\n${text}`);
 
     pendingReply[ADMIN_ID] = null;
-    return ctx.reply("✅ Sent to user");
+    return ctx.reply("🤖 Reply পাঠানো সম্পন্ন হয়েছে — ইউজার এখন মেসেজটি পেয়েছে 📩");
   }
 
   const user = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
@@ -244,7 +314,7 @@ bot.on("text", async (ctx) => {
 });
 
 /* =========================
-   RANDOM GROUP MSG
+   RANDOM GROUP MESSAGE + AUTO DELETE
 ========================= */
 
 const randomMessages = [
@@ -264,9 +334,26 @@ const randomMessages = [
   "⚙️ Smart system running smoothly 🤖",
   "📢 Stay tuned for updates 🔔"
 ];
+
 setInterval(async () => {
-  const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
-  await bot.telegram.sendMessage(GROUP_ID, msg);
+  try {
+    const msg =
+      randomMessages[Math.floor(Math.random() * randomMessages.length)];
+
+    const sent = await bot.telegram.sendMessage(GROUP_ID, msg);
+
+    // AUTO DELETE AFTER 10 MINUTES
+    setTimeout(async () => {
+      try {
+        await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
+      } catch (e) {
+        console.log("Delete error:", e.message);
+      }
+    }, 600000);
+
+  } catch (e) {
+    console.log("random error:", e.message);
+  }
 }, 120000);
 
 /* ========================= */
