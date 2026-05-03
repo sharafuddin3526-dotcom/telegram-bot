@@ -24,6 +24,10 @@ function saveDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
+/* ================= RANDOM CONTROL ================= */
+
+let randomOn = true;
+
 /* ================= JOIN CHECK ================= */
 
 async function isJoined(ctx) {
@@ -56,15 +60,8 @@ const START_MSG = `🌸 Bot Started Successfully 🚀
 📌 You can use the following commands:
 
 🔹 /start → Start the bot
-🔹 /panel → View panel (Email/Password/Link)
-🔹 /help → Help menu (can be added later)
-
-⚠️ Note:
-❌ /block → Admin only
-❌ /unblock → Admin only
-❌ /boardchat → Admin only
-
-💡 If you face any issue, contact the admin
+🔹 /panel → View panel
+🔹 /help → Help menu
 
 🚀 Enjoy using the bot`;
 
@@ -122,11 +119,13 @@ bot.action("check_join", async (ctx) => {
   return ctx.editMessageText(START_MSG);
 });
 
+/* ================= HELP ================= */
+
 bot.command("help", (ctx) => {
   ctx.reply(`📌 HELP MENU
 
 🔹 /panel → Get Panel Access
-🔹 Support / Help System Available
+🔹 Support System Available
 
 🇧🇩 সাহায্যের জন্য নিচের বাটন ব্যবহার করুন`, {
     reply_markup: {
@@ -142,8 +141,10 @@ bot.action("support_msg", (ctx) => {
   ctx.reply("✍️ Write your message. It will be sent to admin 📩");
 });
 
+/* ================= PANEL ================= */
+
 bot.command("panel", (ctx) => {
-  return ctx.reply("📊:🍊 ORANGE PANEL ACCESS 🍊:", {
+  return ctx.reply("🍊 ORANGE PANEL ACCESS 🍊", {
     reply_markup: {
       inline_keyboard: [
         [{ text: "📧 Gmail", callback_data: "gmail" }],
@@ -158,6 +159,8 @@ bot.command("panel", (ctx) => {
 bot.action("gmail", (ctx) => ctx.reply("📧 Gmail: Mariyaakter1028@gmail.com"));
 bot.action("pass", (ctx) => ctx.reply("🔐 Password: Onetimeuse"));
 
+/* ================= ADMIN CHECK ================= */
+
 function adminOnly(ctx) {
   if (ctx.from.id !== ADMIN_ID) {
     ctx.reply("🚫 This command is only for admin");
@@ -165,6 +168,8 @@ function adminOnly(ctx) {
   }
   return true;
 }
+
+/* ================= BLOCK ================= */
 
 bot.command("block", (ctx) => {
   if (!adminOnly(ctx)) return;
@@ -176,8 +181,10 @@ bot.command("block", (ctx) => {
   db.banned.push(String(id));
   saveDB(db);
 
-  ctx.reply("✅ User Block successful");
+  ctx.reply("✅ Block successful");
 });
+
+/* ================= UNBLOCK ================= */
 
 bot.command("unblock", (ctx) => {
   if (!adminOnly(ctx)) return;
@@ -189,82 +196,26 @@ bot.command("unblock", (ctx) => {
   db.banned = db.banned.filter(u => u !== String(id));
   saveDB(db);
 
-  ctx.reply("✅ User Unblock successful");
+  ctx.reply("✅ Unblock successful");
 });
 
-bot.command("boardchat", (ctx) => {
+/* ================= RANDOM ON/OFF ================= */
+
+bot.command("randomon", (ctx) => {
   if (!adminOnly(ctx)) return;
 
-  boardchatState[ADMIN_ID] = true;
-  ctx.reply("👉 Write your message");
+  randomOn = true;
+  ctx.reply("🤖 Random message system ON");
 });
 
-bot.command("alluser", (ctx) => {
+bot.command("randomoff", (ctx) => {
   if (!adminOnly(ctx)) return;
 
-  const db = loadDB();
-  const users = Object.entries(db.users);
-
-  let text = `👥 Total Users: ${users.length}\n\n`;
-  users.forEach((u, i) => {
-    text += `${i + 1}. ${u[1].username} (${u[0]})\n`;
-  });
-
-  ctx.reply(text);
+  randomOn = false;
+  ctx.reply("🤖 Random message system OFF");
 });
 
-bot.on("text", async (ctx) => {
-  const id = ctx.from.id;
-  const text = ctx.message.text;
-
-  if (boardchatState[ADMIN_ID] && id === ADMIN_ID) {
-    boardchatState[ADMIN_ID] = false;
-    const db = loadDB();
-
-    await bot.telegram.sendMessage(GROUP_ID, `📢 ${text}`);
-
-    for (let uid of Object.keys(db.users)) {
-      try {
-        await bot.telegram.sendMessage(uid, `📢 ${text}`);
-      } catch {}
-    }
-
-    return ctx.reply("📩 Sent successfully");
-  }
-
-  if (id === ADMIN_ID && adminReply[ADMIN_ID]) {
-    const target = adminReply[ADMIN_ID];
-    adminReply[ADMIN_ID] = null;
-
-    await ctx.telegram.sendMessage(target, `💬 Admin Reply:\n\n${text}`);
-    return ctx.reply("📩 Sent");
-  }
-
-  if (supportState[id]) {
-    supportState[id] = false;
-
-    await ctx.telegram.sendMessage(
-      ADMIN_ID,
-      `📩 USER MESSAGE\n\n👤 ${ctx.from.first_name}\n🆔 ${id}\n\n💬 ${text}`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "💬 Reply", callback_data: `reply_${id}` }]
-          ]
-        }
-      }
-    );
-
-    return ctx.reply("📩 Your message sent successfully");
-  }
-});
-
-bot.action(/reply_(\d+)/, (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
-
-  adminReply[ADMIN_ID] = ctx.match[1];
-  ctx.reply("✍️ Write reply message");
-});
+/* ================= RANDOM MESSAGES ================= */
 
 const randomMessages = [
   "🔥 Don't miss the latest updates!",
@@ -293,7 +244,11 @@ function getRandomMsg() {
   return randomMessages[Math.floor(Math.random() * randomMessages.length)];
 }
 
+/* ================= RANDOM SYSTEM ================= */
+
 setInterval(async () => {
+  if (!randomOn) return;
+
   try {
     const sent = await bot.telegram.sendMessage(GROUP_ID, `📢 ${getRandomMsg()}`, {
       reply_markup: {
@@ -312,6 +267,8 @@ setInterval(async () => {
 
   } catch {}
 }, 2 * 60 * 1000);
+
+/* ================= START BOT ================= */
 
 bot.launch();
 console.log("✅ BOT RUNNING");
