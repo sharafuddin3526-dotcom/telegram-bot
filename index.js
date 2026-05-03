@@ -56,15 +56,14 @@ const START_MSG = `🌸 Bot Started Successfully 🚀
 📌 You can use the following commands:
 
 🔹 /start → Start the bot
-🔹 /panel → View panel (Email/Password/Link)
-🔹 /help → Help menu (can be added later)
+🔹 /panel → View panel
+🔹 /help → Help menu
 
-⚠️ Note:
-❌ /block → Admin only
-❌ /unblock → Admin only
-❌ /boardchat → Admin only
-
-💡 If you face any issue, contact the admin
+⚠️ Admin Commands:
+❌ /block
+❌ /unblock
+❌ /boardchat
+❌ /alluser
 
 🚀 Enjoy using the bot`;
 
@@ -78,22 +77,18 @@ bot.use(async (ctx, next) => {
   if (!ctx.from) return;
 
   const id = ctx.from.id;
-
-  if (id === ADMIN_ID) return next();
-
   const text = ctx.message?.text;
 
-  if (text?.startsWith("/start")) return next();
+  if (id === ADMIN_ID || text?.startsWith("/start")) return next();
 
   const db = loadDB();
   if (db.banned.includes(String(id))) {
-    return ctx.reply("⛔ You are blocked from using this bot");
+    return ctx.reply("⛔ You are blocked");
   }
 
   const joined = await isJoined(ctx);
-
   if (!joined) {
-    return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
+    return ctx.reply("⚠️ Join channels first", joinUI());
   }
 
   return next();
@@ -105,45 +100,66 @@ bot.start(async (ctx) => {
   const db = loadDB();
   const id = String(ctx.from.id);
 
-  const joined = await isJoined(ctx);
-
-  if (!joined) {
-    return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
-  }
-
   if (!db.users[id]) {
-    db.users[id] = { started: true };
+    db.users[id] = {
+      username: ctx.from.username || "NoUsername"
+    };
     saveDB(db);
   }
 
   return ctx.reply(START_MSG);
 });
 
-/* ================= JOIN BUTTON FIX ================= */
+/* ================= HELP ================= */
 
-bot.action("check_join", async (ctx) => {
-  const ok = await isJoined(ctx);
+bot.command("help", (ctx) => {
+  ctx.reply(`📌 HELP MENU
 
-  if (!ok) return ctx.answerCbQuery("❌ Not Joined", { show_alert: true });
+🔹 /panel → Get Panel Access
+🔹 Support / Help System Available
 
-  return ctx.editMessageText(START_MSG);
+🇧🇩 সাহায্যের জন্য নিচের বাটন ব্যবহার করুন`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "🆘 Support", url: "https://t.me/Smart_Method_Owner" }]
+      ]
+    }
+  });
+});
+
+/* ================= PANEL ================= */
+
+bot.command("panel", (ctx) => {
+  ctx.reply("📊 Panel Access:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "📧 Gmail", callback_data: "gmail" }],
+        [{ text: "🔐 Password", callback_data: "pass" }],
+        [{ text: "🌐 Login Panel", url: "https://www.orangecarrier.com/" }],
+        [{ text: "👤 Support ID", url: "https://t.me/Smart_Method_Owner" }]
+      ]
+    }
+  });
+});
+
+bot.action("gmail", (ctx) => {
+  ctx.reply("📧 Gmail: Mariyaakter1028@gmail.com");
+});
+
+bot.action("pass", (ctx) => {
+  ctx.reply("🔐 Password: Onetimeuse");
 });
 
 /* ================= BLOCK ================= */
 
 bot.command("block", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return ctx.reply("🚫 Only admin");
+  if (ctx.from.id !== ADMIN_ID) return;
 
-  const parts = ctx.message.text.split(" ");
-
-  if (!parts[1]) {
-    return ctx.reply("⚠️ Please provide a user ID\nExample: /block 123456");
-  }
-
-  const id = parts[1];
+  const id = ctx.message.text.split(" ")[1];
+  if (!id) return ctx.reply("⚠️ Give user ID");
 
   const db = loadDB();
-  if (!db.banned.includes(String(id))) db.banned.push(String(id));
+  db.banned.push(String(id));
   saveDB(db);
 
   ctx.reply("✅ Block successful");
@@ -152,15 +168,10 @@ bot.command("block", (ctx) => {
 /* ================= UNBLOCK ================= */
 
 bot.command("unblock", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return ctx.reply("🚫 Only admin");
+  if (ctx.from.id !== ADMIN_ID) return;
 
-  const parts = ctx.message.text.split(" ");
-
-  if (!parts[1]) {
-    return ctx.reply("⚠️ Please provide a user ID\nExample: /unblock 123456");
-  }
-
-  const id = parts[1];
+  const id = ctx.message.text.split(" ")[1];
+  if (!id) return ctx.reply("⚠️ Give user ID");
 
   const db = loadDB();
   db.banned = db.banned.filter(u => u !== String(id));
@@ -172,10 +183,9 @@ bot.command("unblock", (ctx) => {
 /* ================= BOARDCHAT ================= */
 
 bot.command("boardchat", (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return ctx.reply("🚫 Only admin");
+  if (ctx.from.id !== ADMIN_ID) return;
 
   boardchatState[ADMIN_ID] = true;
-
   ctx.reply("👉 Please write what you want to send");
 });
 
@@ -186,10 +196,37 @@ bot.on("text", async (ctx) => {
     const msg = ctx.message.text;
     boardchatState[ADMIN_ID] = false;
 
+    const db = loadDB();
+
+    // group
     await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
+
+    // users
+    for (let userId of Object.keys(db.users)) {
+      try {
+        await bot.telegram.sendMessage(userId, `📢 ${msg}`);
+      } catch {}
+    }
 
     return ctx.reply("📩 Message sent to group & users successfully");
   }
+});
+
+/* ================= ALL USER ================= */
+
+bot.command("alluser", (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) return;
+
+  const db = loadDB();
+  const users = Object.entries(db.users);
+
+  let text = `👥 Total Users: ${users.length}\n\n`;
+
+  users.forEach((u, i) => {
+    text += `${i + 1}. ${u[1].username} (${u[0]})\n`;
+  });
+
+  ctx.reply(text);
 });
 
 /* ================= BOT START ================= */
