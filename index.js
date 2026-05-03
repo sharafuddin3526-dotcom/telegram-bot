@@ -283,24 +283,29 @@ return randomMessages[Math.floor(Math.random() * randomMessages.length)];
 }
 
 setInterval(async () => {
-try {
-const sent = await bot.telegram.sendMessage(GROUP_ID, 📢 ${getRandomMsg()}, {
-reply_markup: {
-inline_keyboard: [
-[{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
-[{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }]
-]
-}
-});
+  try {
+    const sent = await bot.telegram.sendMessage(
+      GROUP_ID,
+      `📢 ${getRandomMsg()}`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "⚙️ Global Channel", url: "https://t.me/Global_Method_Channel" }],
+            [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1" }]
+          ]
+        }
+      }
+    );
 
-setTimeout(async () => {  
-  try {  
-    await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);  
-  } catch {}  
-}, 4 * 60 * 1000);
+    setTimeout(async () => {
+      try {
+        await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
+      } catch {}
+    }, 4 * 60 * 1000);
 
-} catch {}
+  } catch (err) {
+    console.log(err);
+  }
 }, 2 * 60 * 1000);
-
 bot.launch();
 console.log("✅ BOT RUNNING");
