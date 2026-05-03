@@ -221,13 +221,13 @@ if (boardchatState[ADMIN_ID] && id === ADMIN_ID) {
 boardchatState[ADMIN_ID] = false;
 const db = loadDB();
 
-await bot.telegram.sendMessage(GROUP_ID, 📢 ${text});
+await bot.telegram.sendMessage(GROUP_ID, `📢 ${text}`);  
 
-for (let uid of Object.keys(db.users)) {
-try {
-await bot.telegram.sendMessage(uid, 📢 ${text});
-} catch {}
-}
+for (let uid of Object.keys(db.users)) {  
+  try {  
+    await bot.telegram.sendMessage(uid, `📢 ${text}`);  
+  } catch {}  
+}  
 
 return ctx.reply("📩 Sent successfully");
 
@@ -237,7 +237,7 @@ if (id === ADMIN_ID && adminReply[ADMIN_ID]) {
 const target = adminReply[ADMIN_ID];
 adminReply[ADMIN_ID] = null;
 
-await ctx.telegram.sendMessage(target, 💬 Admin Reply:\n\n${text});
+await ctx.telegram.sendMessage(target, `💬 Admin Reply:\n\n${text}`);  
 return ctx.reply("📩 Sent");
 
 }
@@ -245,17 +245,17 @@ return ctx.reply("📩 Sent");
 if (supportState[id]) {
 supportState[id] = false;
 
-await ctx.telegram.sendMessage(
-ADMIN_ID,
-📩 USER MESSAGE\n\n👤 ${ctx.from.first_name}\n🆔 ${id}\n\n💬 ${text},
-{
-reply_markup: {
-inline_keyboard: [
-[{ text: "💬 Reply", callback_data: reply_${id} }]
-]
-}
-}
-);
+await ctx.telegram.sendMessage(  
+  ADMIN_ID,  
+  `📩 USER MESSAGE\n\n👤 ${ctx.from.first_name}\n🆔 ${id}\n\n💬 ${text}`,  
+  {  
+    reply_markup: {  
+      inline_keyboard: [  
+        [{ text: "💬 Reply", callback_data: `reply_${id}` }]  
+      ]  
+    }  
+  }  
+);  
 
 return ctx.reply("📩 Your message sent successfully");
 
@@ -307,10 +307,10 @@ inline_keyboard: [
 }
 });
 
-setTimeout(async () => {
-try {
-await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
-} catch {}
+setTimeout(async () => {  
+  try {  
+    await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);  
+  } catch {}  
 }, 4 * 60 * 1000);
 
 } catch {}
