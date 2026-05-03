@@ -80,10 +80,10 @@ bot.start(async (ctx) => {
   const ok = await isJoined(ctx);
 
   if (!ok) {
-    return ctx.reply("⚠️ Access Denied 🚫\n\n" +
-  "You must join all required channels before using this bot 📢\n\n" +
-  "👉 After joining, click the button below to verify your access 🔄\n\n" +
-  "🔥 Stay connected to unlock full features 🚀", joinUI());
+    return ctx.reply(
+      "⚠️ Access Denied 🚫\n\nYou must join all required channels before using this bot 📢\n\n👉 After joining, click the button below to verify your access 🔄\n\n🔥 Stay connected to unlock full features 🚀",
+      joinUI()
+    );
   }
 
   ctx.reply(`🌸 Bot Started Successfully 🚀
@@ -104,6 +104,7 @@ bot.start(async (ctx) => {
 💡 If you face any issue, contact the admin
 
 🚀 Enjoy using the bot`);
+});
 
 /* =========================
    CHECK JOIN BUTTON
@@ -113,15 +114,15 @@ bot.action("check_join", async (ctx) => {
   const ok = await isJoined(ctx);
 
   if (!ok) {
-  return ctx.answerCbQuery(
+    return ctx.answerCbQuery(
 `❌ NOT JOINED ❌
 
 🚫 Access Blocked
 📢 Join Required Channels First`
-  );
-}
+    );
+  }
 
-await ctx.editMessageText(`🎉✅ Verification Successful! 🚀
+  await ctx.editMessageText(`🎉✅ Verification Successful! 🚀
 
 ━━━━━━━━━━━━━━━
 🌸 Congratulations!
@@ -133,9 +134,10 @@ You are now fully verified 💎
 
 ━━━━━━━━━━━━━━━
 💡 Smart Method System Active`);
+});
 
 /* =========================
-   PANEL COMMAND
+   PANEL
 ========================= */
 
 bot.command("panel", (ctx) => {
@@ -145,25 +147,17 @@ bot.command("panel", (ctx) => {
 `, {
     reply_markup: {
       inline_keyboard: [
-        [
-          { text: "📧 Copy Gmail", callback_data: "copy_email" }
-        ],
-        [
-          { text: "🔐 Copy Password", callback_data: "copy_pass" }
-        ],
-        [
-          { text: "🌐 Panel Login", url: "https://www.orangecarrier.com" }
-        ],
-        [
-          { text: "👤 Support", url: "https://t.me/Smart_Method_Owner" }
-        ]
+        [{ text: "📧 Copy Gmail", callback_data: "copy_email" }],
+        [{ text: "🔐 Copy Password", callback_data: "copy_pass" }],
+        [{ text: "🌐 Panel Login", url: "https://www.orangecarrier.com" }],
+        [{ text: "👤 Support", url: "https://t.me/Smart_Method_Owner" }]
       ]
     }
   });
 });
 
 /* =========================
-   COPY BUTTONS
+   COPY
 ========================= */
 
 bot.action("copy_email", (ctx) => {
@@ -175,72 +169,41 @@ bot.action("copy_pass", (ctx) => {
 });
 
 /* =========================
-   BOARDCHAT (ADMIN ONLY)
+   BOARDCHAT
 ========================= */
 
 bot.command("boardchat", async (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply(`🚫 ACCESS DENIED 🚫
+    return ctx.reply("🚫 ACCESS DENIED 🚫\n\nOnly ADMIN can use this command");
 
-⚠️ This command is restricted!
-
-👮‍♂️ Only ADMIN has permission to use this feature.
-
-🔒 You do not have the required access level.
-
-━━━━━━━━━━━━━━━
-💡 If you think this is a mistake, contact support
-`);
   const msg = ctx.message.text.split(" ").slice(1).join(" ");
   if (!msg) return ctx.reply("❌ /boardchat message");
 
   await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
-  ctx.reply("✅ Message successfully sent to group 🚀");
+  ctx.reply("✅ Sent to group");
 });
 
 /* =========================
-   BLOCK
+   BLOCK / UNBLOCK
 ========================= */
 
 bot.command("block", (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("🚫 ACCESS DENIED 🚫
-
-⚠️ This command is restricted!
-
-👮‍♂️ Only ADMIN has permission to use this feature.
-
-🔒 You do not have the required access level.
-
-━━━━━━━━━━━━━━━
-💡 If you think this is a mistake, contact support");
+    return ctx.reply("🚫 ACCESS DENIED 🚫");
 
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("❌ /block userID");
 
   const db = loadDB();
-  if (!db.banned.includes(String(id))) db.banned.push(String(id));
+  db.banned.push(String(id));
   saveDB(db);
 
   ctx.reply(`⛔ Blocked ${id}`);
 });
 
-/* =========================
-   UNBLOCK
-========================= */
-
 bot.command("unblock", (ctx) => {
   if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("🚫 ACCESS DENIED 🚫
-
-⚠️ This command is restricted!
-
-👮‍♂️ Only ADMIN has permission to use this feature.
-
-🔒 You do not have the required access level.
-
-━━━━━━━━━━━━━━━
-💡 If you think this is a mistake, contact support");
+    return ctx.reply("🚫 ACCESS DENIED 🚫");
 
   const id = ctx.message.text.split(" ")[1];
   if (!id) return ctx.reply("❌ /unblock userID");
@@ -253,49 +216,24 @@ bot.command("unblock", (ctx) => {
 });
 
 /* =========================
-   REPLY SYSTEM
-========================= */
-
-bot.action(/reply_(\d+)/, async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID)
-    return ctx.answerCbQuery("🚫 ACCESS DENIED 🚫
-
-⚠️ This command is restricted!
-
-👮‍♂️ Only ADMIN has permission to use this feature.
-
-🔒 You do not have the required access level.
-
-━━━━━━━━━━━━━━━
-💡 If you think this is a mistake, contact support");
-
-  const userId = ctx.match[1];
-  pendingReply[ADMIN_ID] = userId;
-
-  ctx.reply("✍️ You are now replying to this user. Type your message...");
-});
-
-/* =========================
    MESSAGE HANDLER
 ========================= */
 
 bot.on("text", async (ctx) => {
-  const text = ctx.message.text;
   const id = ctx.from.id;
 
-  if (isBanned(id)) return ctx.reply("⛔ Access denied. You are blocked by @Smart_Method_Owner");
+  if (isBanned(id)) return ctx.reply("⛔ You are blocked");
 
   const ok = await isJoined(ctx);
   if (!ok) return ctx.reply("⚠️ Join first", joinUI());
 
-  /* ADMIN REPLY */
+  const text = ctx.message.text;
+
   if (id === ADMIN_ID && pendingReply[ADMIN_ID]) {
     const userId = pendingReply[ADMIN_ID];
-
-    await ctx.telegram.sendMessage(userId, `💬 You received a reply from Admin:\n\n${text}`);
-
+    await ctx.telegram.sendMessage(userId, `💬 Admin Reply:\n\n${text}`);
     pendingReply[ADMIN_ID] = null;
-    return ctx.reply("🤖 Reply পাঠানো সম্পন্ন হয়েছে — ইউজার এখন মেসেজটি পেয়েছে 📩");
+    return ctx.reply("✅ Sent");
   }
 
   const user = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
@@ -316,7 +254,7 @@ bot.on("text", async (ctx) => {
 });
 
 /* =========================
-   RANDOM GROUP MESSAGE + AUTO DELETE
+   RANDOM MESSAGE + AUTO DELETE
 ========================= */
 
 const randomMessages = [
@@ -324,38 +262,20 @@ const randomMessages = [
   "🚀 Keep grinding, don’t stop 🔥",
   "💡 Smart work always wins 🧠",
   "🌸 Stay positive, stay focused 😊",
-  "⚡ System is fully active now 🚀",
-  "🔥 Hustle hard, shine bright 💎",
-  "📈 Your growth matters every day 📊",
-  "💬 Keep learning, keep earning 💰",
-  "🌍 Connected with global system 🌐",
-  "🧠 Upgrade your mindset daily 📚",
-  "💎 Small steps lead to big success 🏆",
-  "🚀 Never quit, just upgrade 🔥",
-  "🌸 Good vibes only ✨",
-  "⚙️ Smart system running smoothly 🤖",
-  "📢 Stay tuned for updates 🔔"
+  "⚡ System is fully active now 🚀"
 ];
 
 setInterval(async () => {
-  try {
-    const msg =
-      randomMessages[Math.floor(Math.random() * randomMessages.length)];
+  const msg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
 
-    const sent = await bot.telegram.sendMessage(GROUP_ID, msg);
+  const sent = await bot.telegram.sendMessage(GROUP_ID, msg);
 
-    // AUTO DELETE AFTER 10 MINUTES
-    setTimeout(async () => {
-      try {
-        await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
-      } catch (e) {
-        console.log("Delete error:", e.message);
-      }
-    }, 600000);
+  setTimeout(async () => {
+    try {
+      await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
+    } catch {}
+  }, 600000);
 
-  } catch (e) {
-    console.log("random error:", e.message);
-  }
 }, 120000);
 
 /* ========================= */
