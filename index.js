@@ -14,7 +14,7 @@ const GROUP_ID = "-1003527248014";
 const DB_FILE = "./db.json";
 
 /* =========================
-   REPLY SYSTEM
+   SYSTEM
 ========================= */
 
 const pendingReply = {};
@@ -73,7 +73,7 @@ function joinUI() {
 }
 
 /* =========================
-   🔥 GLOBAL ACCESS MIDDLEWARE
+   GLOBAL MIDDLEWARE
 ========================= */
 
 async function checkAccess(ctx, next) {
@@ -81,17 +81,13 @@ async function checkAccess(ctx, next) {
 
   if (!ok) {
     return ctx.reply(
-      "⚠️ Access Denied 🚫\n\nYou must join all required channels before using this bot 📢\n\n👉 Click below button after joining 🔄\n\n🚀 Unlock full access after verification",
+      "⚠️ Access Denied 🚫\n\nYou must join required channels 📢\n\n👉 Join first then click button 🔄",
       joinUI()
     );
   }
 
   return next();
 }
-
-/* =========================
-   APPLY MIDDLEWARE
-========================= */
 
 bot.use(checkAccess);
 
@@ -104,31 +100,25 @@ bot.start(async (ctx) => {
 
 👋 Welcome!
 
-📌 You can use the following commands:
+📌 Commands:
+🔹 /panel → Panel
+🔹 /help → Help
 
-🔹 /start → Start the bot
-🔹 /panel → View panel
-
-🚀 Enjoy using the bot`);
+🚀 Enjoy using bot`);
 });
 
 /* =========================
-   CHECK JOIN BUTTON
+   CHECK JOIN
 ========================= */
 
 bot.action("check_join", async (ctx) => {
   const ok = await isJoined(ctx);
 
-  if (!ok) {
-    return ctx.answerCbQuery(
-      "❌ NOT JOINED ❌\n\n📢 Join required channels first"
-    );
-  }
+  if (!ok) return ctx.answerCbQuery("❌ NOT JOINED");
 
-  return ctx.editMessageText(`🎉 Verification Successful 🚀
+  return ctx.editMessageText(`🎉 VERIFIED SUCCESSFUL 🚀
 
-🌸 You are now fully verified 💎
-🚀 All features unlocked`);
+🌸 Access Granted 💎`);
 });
 
 /* =========================
@@ -148,12 +138,56 @@ bot.command("panel", (ctx) => {
   });
 });
 
-bot.action("copy_email", (ctx) => {
-  ctx.answerCbQuery("📧 Copied: Mariyaakter1028@gmail.com");
+bot.action("copy_email", async (ctx) => {
+  await ctx.answerCbQuery();
+  return ctx.reply("📧 Gmail:\n\nmariyaakter1028@gmail.com");
 });
 
-bot.action("copy_pass", (ctx) => {
-  ctx.answerCbQuery("🔐 Copied: Onetimeuse");
+bot.action("copy_pass", async (ctx) => {
+  await ctx.answerCbQuery();
+  return ctx.reply("🔐 Password:\n\nOnetimeuse");
+});
+
+/* =========================
+   HELP SYSTEM
+========================= */
+
+bot.command("help", async (ctx) => {
+  const user = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
+
+  await ctx.telegram.sendMessage(
+    ADMIN_ID,
+    `📩 HELP REQUEST
+
+👤 User: ${user}
+🆔 ID: ${ctx.from.id}
+
+🇧🇩 বাংলা:
+একজন ইউজার সাহায্য চেয়েছে।
+
+🇬🇧 English:
+A user requested help via /help command.`
+  );
+
+  return ctx.reply(`🆘 Help request sent
+
+🇧🇩 Admin আপনার সাথে যোগাযোগ করবে
+🇬🇧 Admin will contact you soon`);
+});
+
+/* =========================
+   BOARDCHAT
+========================= */
+
+bot.command("boardchat", async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID)
+    return ctx.reply("🚫 ACCESS DENIED 🚫");
+
+  const msg = ctx.message.text.split(" ").slice(1).join(" ");
+  if (!msg) return ctx.reply("❌ /boardchat message");
+
+  await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
+  ctx.reply("✅ Sent");
 });
 
 /* =========================
@@ -185,45 +219,33 @@ bot.command("unblock", (ctx) => {
 });
 
 /* =========================
-   BOARDCHAT
-========================= */
-
-bot.command("boardchat", async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID)
-    return ctx.reply("🚫 ACCESS DENIED 🚫");
-
-  const msg = ctx.message.text.split(" ").slice(1).join(" ");
-  if (!msg) return ctx.reply("❌ /boardchat message");
-
-  await bot.telegram.sendMessage(GROUP_ID, `📢 ${msg}`);
-  ctx.reply("✅ Sent to group");
-});
-
-/* =========================
    MESSAGE HANDLER
 ========================= */
 
 bot.on("text", async (ctx) => {
   const id = ctx.from.id;
 
-  if (isBanned(id)) return ctx.reply("⛔ You are blocked");
+  if (isBanned(id)) return ctx.reply("⛔ Blocked");
 
   const text = ctx.message.text;
 
   if (id === ADMIN_ID && pendingReply[ADMIN_ID]) {
     const userId = pendingReply[ADMIN_ID];
-
-    await ctx.telegram.sendMessage(userId, `💬 Admin Reply:\n\n${text}`);
-
+    await ctx.telegram.sendMessage(userId, `💬 Reply:\n\n${text}`);
     pendingReply[ADMIN_ID] = null;
-    return ctx.reply("✅ Sent to user");
+    return ctx.reply("✅ Sent");
   }
 
   const user = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
 
   await ctx.telegram.sendMessage(
     ADMIN_ID,
-    `📩 MESSAGE\n\n👤 ${user}\n🆔 ${id}\n\n💬 ${text}`,
+    `📩 MESSAGE
+
+👤 ${user}
+🆔 ${id}
+
+💬 ${text}`,
     {
       reply_markup: {
         inline_keyboard: [
@@ -237,7 +259,7 @@ bot.on("text", async (ctx) => {
 });
 
 /* =========================
-   RANDOM SMS + BUTTONS
+   RANDOM MESSAGE
 ========================= */
 
 const randomMessages = [
@@ -245,19 +267,13 @@ const randomMessages = [
   "🚀 Keep grinding, don’t stop 🔥",
   "💡 Smart work always wins 🧠",
   "🌸 Stay positive, stay focused 😊",
-  "⚡ System is active 🚀"
+  "⚡ System active 🚀",
+  "📈 Growth is loading...",
+  "💎 Small steps = Big success",
+  "🔥 Never give up",
+  "🌍 Global system connected",
+  "🧠 Upgrade your mindset daily"
 ];
-
-function randomButtons() {
-  return {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "📢 Main Channel", url: "https://t.me/+75BQ2Qw9UZI4OTM1M" }],
-        [{ text: "⚙️ Method Channel", url: "https://t.me/Global_Method_Channel" }]
-      ]
-    }
-  };
-}
 
 setInterval(async () => {
   try {
@@ -266,19 +282,15 @@ setInterval(async () => {
 
     const sent = await bot.telegram.sendMessage(
       GROUP_ID,
-      `📢 RANDOM SMS\n\n${msg}`,
-      randomButtons()
+      `📢 RANDOM SMS\n\n${msg}`
     );
 
     setTimeout(async () => {
       try {
         await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
       } catch {}
-    }, 600000);
-
-  } catch (e) {
-    console.log(e.message);
-  }
+    }, 420000);
+  } catch {}
 }, 120000);
 
 /* ========================= */
