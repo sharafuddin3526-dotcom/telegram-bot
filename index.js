@@ -148,7 +148,7 @@ bot.action("support_msg", (ctx) => {
 
 /* ================= PANEL ================= */
 
-bot.command("🍊ORANGE PANEL ACCESS🍊", (ctx) => {
+bot.command("ORANGE PANEL ACCESS", (ctx) => {
   ctx.reply("📊 Panel:", {
     reply_markup: {
       inline_keyboard: [
