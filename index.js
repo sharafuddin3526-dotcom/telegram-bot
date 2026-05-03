@@ -53,8 +53,18 @@ const START_MSG = `🌸 Bot Started Successfully 🚀
 
 👋 Welcome!
 
-📌 Commands:
-/start /panel /help
+📌 You can use the following commands:
+
+🔹 /start → Start the bot
+🔹 /panel → View panel (Email/Password/Link)
+🔹 /help → Help menu (can be added later)
+
+⚠️ Note:
+❌ /block → Admin only
+❌ /unblock → Admin only
+❌ /boardchat → Admin only
+
+💡 If you face any issue, contact the admin
 
 🚀 Enjoy using the bot`;
 
@@ -120,7 +130,9 @@ bot.command("help", (ctx) => {
   ctx.reply(`📌 HELP MENU
 
 🔹 /panel → Get Panel Access
-🔹 Support available`, {
+🔹 Support / Help System Available
+
+🇧🇩 সাহায্যের জন্য নিচের বাটন ব্যবহার করুন`, {
     reply_markup: {
       inline_keyboard: [
         [{ text: "🆘 Support", callback_data: "support_msg" }]
