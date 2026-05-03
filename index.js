@@ -102,7 +102,7 @@ bot.use(async (ctx, next) => {
 
 bot.start(async (ctx) => {
   const joined = await isJoined(ctx);
-  if (!joined) return ctx.reply("⚠️ Please join first 🚀", joinUI());
+  if (!joined) return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
 
   const db = loadDB();
   const id = String(ctx.from.id);
@@ -148,7 +148,7 @@ bot.action("support_msg", (ctx) => {
 
 /* ================= PANEL ================= */
 
-bot.command("panel", (ctx) => {
+bot.command("🍊 ORANGE PANEL ACCESS 🍊", (ctx) => {
   ctx.reply("📊 Panel:", {
     reply_markup: {
       inline_keyboard: [
@@ -186,7 +186,7 @@ bot.command("block", (ctx) => {
   db.banned.push(String(id));
   saveDB(db);
 
-  ctx.reply("✅ Block successful");
+  ctx.reply("✅ User Block successful");
 });
 
 /* ================= UNBLOCK ================= */
@@ -201,7 +201,7 @@ bot.command("unblock", (ctx) => {
   db.banned = db.banned.filter(u => u !== String(id));
   saveDB(db);
 
-  ctx.reply("✅ Unblock successful");
+  ctx.reply("✅ User Unblock successful");
 });
 
 /* ================= BOARDCHAT ================= */
@@ -328,10 +328,10 @@ setInterval(async () => {
       try {
         await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
       } catch {}
-    }, 6 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
   } catch {}
-}, 2 * 60 * 1000);
+}, 90 * 1000);
 
 /* ================= START BOT ================= */
 
