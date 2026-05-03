@@ -148,7 +148,7 @@ bot.action("support_msg", (ctx) => {
 
 /* ================= PANEL ================= */
 
-bot.command("🍊 ORANGE PANEL ACCESS 🍊", (ctx) => {
+bot.command("🍊ORANGE PANEL ACCESS🍊", (ctx) => {
   ctx.reply("📊 Panel:", {
     reply_markup: {
       inline_keyboard: [
@@ -331,7 +331,7 @@ setInterval(async () => {
     }, 5 * 60 * 1000);
 
   } catch {}
-}, 90 * 1000);
+},2 * 60 * 1000);
 
 /* ================= START BOT ================= */
 
