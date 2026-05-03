@@ -86,7 +86,7 @@ bot.start(async (ctx) => {
   "🔥 Stay connected to unlock full features 🚀", joinUI());
   }
 
-  ctx.reply("🌸 Bot Started Successfully 🚀
+  ctx.reply(`🌸 Bot Started Successfully 🚀
 
 👋 Welcome!
 
@@ -103,8 +103,7 @@ bot.start(async (ctx) => {
 
 💡 If you face any issue, contact the admin
 
-🚀 Enjoy using the bot");
-});
+🚀 Enjoy using the bot`);
 
 /* =========================
    CHECK JOIN BUTTON
