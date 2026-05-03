@@ -114,7 +114,7 @@ function randomButtons() {
 const supportPending = {};
 
 /* =========================
-   GLOBAL MIDDLEWARE
+   GLOBAL MIDDLEWARE (FIXED)
 ========================= */
 
 bot.use(async (ctx, next) => {
@@ -130,8 +130,11 @@ bot.use(async (ctx, next) => {
     return ctx.reply("⛔ You are blocked.");
   }
 
+  // Get message text safely
+  const text = ctx.message?.text || "";
+
   // Allow /start always
-  if (ctx.message?.text?.startsWith("/start")) {
+  if (text.startsWith("/start")) {
     return next();
   }
 
@@ -148,10 +151,10 @@ bot.use(async (ctx, next) => {
 });
 
 /* =========================
-   START COMMAND (FIXED)
+   START COMMAND (100% FIXED)
 ========================= */
 
-bot.start(async (ctx) => {
+bot.command("start", async (ctx) => {
   const db = loadDB();
   const userId = String(ctx.from.id);
 
@@ -172,22 +175,33 @@ bot.start(async (ctx) => {
 
   // If already verified before
   if (db.users[userId].joined === true) {
-    return ctx.reply(`🌸 Welcome Back! 🚀
+    return ctx.reply(`🌸 Bot Started Successfully 🚀
 
+✅ Welcome Back!
+
+━━━━━━━━━━━━━━━
 🎉 Congratulations!
-আপনি এখন বটটি সম্পূর্ণভাবে ব্যবহার করতে পারবেন ✅
+You can now use this bot without any restriction ✅
 
 📌 Available Features:
-🔹 Free Orange Carrier Panel Access (/panel)
-🔹 Support System (/help)
-🔹 Auto Random Updates in Group
+🔹 /panel → Get Orange Carrier Panel Access 🍊
+🔹 /help → Support System 📩
+🔹 Auto Random Updates in Group ⚡
 
-💡 যদি কোনো সাহায্য প্রয়োজন হয় তাহলে /help command send করুন
+━━━━━━━━━━━━━━━
+🇧🇩 বাংলা:
+আপনি এখন বটটি সম্পূর্ণভাবে ব্যবহার করতে পারবেন ✅
 
-⚡ Smart Method System Active 🤖`);
+📌 যদি কোনো সাহায্য প্রয়োজন হয় তাহলে /help command send করুন
+
+━━━━━━━━━━━━━━━
+🌐 My Personal Website:
+👉 https://mdshahavuddinm904.github.io/Smart-Method-Owner/ 🌍✨
+
+📌 এমন বট বানাতে চাইলে অবশ্যই আমাদের Support এ মেসেজ দিবেন 📩🔥`);
   }
 
-  // First time verified
+  // First time verified after joining
   db.users[userId].joined = true;
   saveDB(db);
 
@@ -197,7 +211,10 @@ bot.start(async (ctx) => {
 
 📌 যদি কোনো সাহায্য প্রয়োজন হয় তাহলে /help command send করুন
 
-🔹 /panel → To get Orange Carrier Panel Access 🚀`);
+🔹 /panel → To get Orange Carrier Panel Access 🚀
+
+🌐 Website:
+👉 https://mdshahavuddinm904.github.io/Smart-Method-Owner/ 🌍✨`);
 });
 
 /* =========================
