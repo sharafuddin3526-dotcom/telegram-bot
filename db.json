@@ -1,4 +1,1 @@
-{
-  "banned": [],
-  "users": {}
-}
+return JSON.parse(fs.readFileSync(DB_FILE, "utf-8") || '{"banned":[],"users":{}}');
