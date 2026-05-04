@@ -102,25 +102,60 @@ return next();
 /* ================= START ================= */
 
 bot.start(async (ctx) => {
-const joined = await isJoined(ctx);
-if (!joined) return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
+  const db = loadDB();
+  const id = String(ctx.from.id);
 
-const db = loadDB();
-const id = String(ctx.from.id);
+  if (!db.users[id]) {
+    db.users[id] = {
+      username: ctx.from.username || "NoUsername",
+      verified: false
+    };
+    saveDB(db);
+  }
 
-if (!db.users[id]) {
-db.users[id] = { username: ctx.from.username || "NoUsername" };
-saveDB(db);
-}
+  // যদি আগে verify করা থাকে → direct START_MSG
+  if (db.users[id].verified) {
+    return ctx.reply(START_MSG);
+  }
 
-return ctx.reply(START_MSG);
+  // না থাকলে join check
+  const joined = await isJoined(ctx);
+
+  if (!joined) {
+    return ctx.reply("⚠️ Please join channels first 🚀", joinUI());
+  }
+
+  // joined → verified করে save
+  db.users[id].verified = true;
+  saveDB(db);
+
+  return ctx.reply(START_MSG);
 });
 
 bot.action("check_join", async (ctx) => {
-const ok = await isJoined(ctx);
-if (!ok) return ctx.answerCbQuery("❌ Not Joined", { show_alert: true });
+  const ok = await isJoined(ctx);
+  const db = loadDB();
+  const id = String(ctx.from.id);
 
-return ctx.editMessageText(START_MSG);
+  if (!ok) {
+    return ctx.answerCbQuery("❌ Not Joined", { show_alert: true });
+  }
+
+  // verified save
+  if (!db.users[id]) {
+    db.users[id] = {
+      username: ctx.from.username || "NoUsername",
+      verified: true
+    };
+  } else {
+    db.users[id].verified = true;
+  }
+
+  saveDB(db);
+
+  await ctx.answerCbQuery("✅ Joined!");
+
+  return ctx.editMessageText(START_MSG);
 });
 
 bot.command("help", (ctx) => {
