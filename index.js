@@ -316,7 +316,7 @@ setInterval(async () => {
       try {
         await bot.telegram.deleteMessage(GROUP_ID, sent.message_id);
       } catch {}
-    }, 4 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
   } catch (err) {
     console.log(err);
