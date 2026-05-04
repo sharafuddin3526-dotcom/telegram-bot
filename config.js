@@ -1,4 +1,4 @@
-export const BOT_TOKEN = "8529411138:AAHoxy_H8vWMS7A4uT188-6jehySe2uj_mI";
+export const BOT_TOKEN = "8775053954:AAGNagUJcUke34XDPh_xkjf2_DqYgxKB8mY";
 
 export const ADMIN_ID = 8136997138;
 
